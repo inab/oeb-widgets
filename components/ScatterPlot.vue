@@ -25,8 +25,20 @@ export default {
   },
   methods: {
     renderChart() {
+      const plotData = [this.data]; // Asegúrate de que los datos estén en un array
+
+      const layout = {
+        title: 'Scatter Plot',
+        xaxis: {
+          title: 'X Axis'
+        },
+        yaxis: {
+          title: 'Y Axis'
+        }
+      };
+
       // Configurar el scatter plot
-      Plotly.newPlot(this.$refs.chart, this.data, {});
+      Plotly.newPlot(this.$refs.chart, plotData, layout);
     }
   }
 };
