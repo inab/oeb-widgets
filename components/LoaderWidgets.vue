@@ -2,7 +2,6 @@
     <v-row justify="center" align="center">
     <v-col>
       <ScatterPlot v-if="dataChart && dataChart.type == 'scatter'" :data="dataChart" />
-      {{ dataChart }}
       <!-- <BarPlot v-if="data[0].type == 'bar'" :data="data" /> -->
       
     </v-col>
