@@ -4,42 +4,36 @@
       <v-col cols="8">
         <div class="butns">
           <!-- Buttons -->
-          <v-row>
-            <v-col>
-              <!-- Button Sort -->
-              <v-btn outlined color="secondary">
-                Sort & Classify Data
-              </v-btn>
 
-            </v-col>
-            <v-col>
-              <!-- Button Optimal -->
-              <v-btn outlined color="secondary">
-                Optimal View
-              </v-btn>
-
-            </v-col>
-            <v-col>
-              <!-- Button Download -->
-              <v-menu offset-y>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn outlined color="secondary" v-bind="attrs" v-on="on">
-                    Download
-                  </v-btn>
-                </template>
-                <v-list>
-                  <v-list-item>
-                    <v-list-item-title>Select a format</v-list-item-title>
-                  </v-list-item>
-                  <v-divider></v-divider>
-                  <v-list-item>PNG</v-list-item>
-                  <v-list-item>SVG (only plot)</v-list-item>
-                  <v-divider></v-divider>
-                  <v-list-item>PDF</v-list-item>
-                </v-list>
-              </v-menu>
-            </v-col>
-          </v-row>
+          <v-btn-toggle class="custom-btn-toggle">
+            <v-btn outlined>
+              Sort & Classify Data
+            </v-btn outlined>
+            <v-btn>
+              Optimal View
+            </v-btn>
+            <!-- Dropdown for Download -->
+            <v-menu offset-y>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn outlined v-bind="attrs" v-on="on">
+                  Download
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item class="menu-item">
+                  <v-list-item-title>SVG</v-list-item-title>
+                </v-list-item>
+                <v-list-item class="menu-item">
+                  <v-list-item-title>PNG</v-list-item-title>
+                </v-list-item>
+                <v-divider></v-divider>
+                <v-list-item class="menu-item">
+                  <v-list-item-title>PDF</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+            <!-- End of Dropdown for Download -->
+          </v-btn-toggle>
         </div>
       </v-col>
     </v-row>
@@ -50,19 +44,15 @@
         <div ref="chart" id="barPlot"></div>
         <br>
         <!-- ID AND DATE TABLE -->
-        <v-simple-table class="tableid">
-          <thead>
-            <tr>
-              <th>Dataset ID</th>
-              <th>Last Update</th>
-            </tr>
-          </thead>
+        <v-simple-table class="custom-table">
           <tbody>
-            <tr>
-              <td>id</td>
-              <td>date</td>
-            </tr>
-          </tbody>
+                <tr>
+                  <th class="first-th">Dataset ID</th>
+                  <td>{{ datasetId }}</td>
+                  <th>Last Update</th>
+                  <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
+                </tr>
+              </tbody>
         </v-simple-table>
       </v-col>
 
@@ -81,12 +71,11 @@ export default {
       required: true
     }
   },
-  data () {
+  data() {
     return {
       loading: false,
-      dataset: null,
       datasetId: null,
-      datasetDate: null,
+      datasetModDate: null,
       datasetPolarity: null,
       formattedDate: null,
       originalData: null,
@@ -98,11 +87,12 @@ export default {
   },
   methods: {
     async renderChart() {
-     this.loading= true
+      this.loading = true
       // Fetch dataset values
       const data = this.dataJson.inline_data
       this.datasetId = await this.dataJson._id
-   
+      this.datasetModDate = this.dataJson.dates.modification
+
       // Save original data for future use
       this.originalData = data;
 
@@ -226,12 +216,76 @@ export default {
         }
       });
     },
+    // FORMAT DATE
+    // ----------------------------------------------------------------
+    formatDateString(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
 
   }
+
 };
 
 </script>
 
 <style scoped>
-/* Estilos específicos del componente */
+.butns {
+  position: absolute;
+  top: 14px;
+  margin-top: 10px;
+  z-index: 1
+}
+
+.menu-item:hover {
+  background-color: #f0f0f0;
+  /* Change background color on hover */
+  cursor: pointer;
+  /* Change cursor on hover */
+}
+
+.custom-btn-toggle .v-btn:first-child {
+  border-top-left-radius: 10px;
+  /* Set rounded corner on top-left side of first button */
+  border-bottom-left-radius: 10px;
+  /* Set rounded corner on bottom-left side of first button */
+}
+
+.custom-btn-toggle .v-btn:last-child {
+  border-top-right-radius: 10px;
+  /* Set rounded corner on top-right side of last button */
+  border-bottom-right-radius: 10px;
+  /* Set rounded corner on bottom-right side of last button */
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.custom-table th{
+background-color: lightgray;
+color: white;
+
+}
+
+.custom-table td {
+  border: 1px solid #e0e0e0;
+  padding: 10px;
+  text-align: center;
+}
+
+.custom-table .first-th {
+  border-top-left-radius: 10px; /* Adjust the radius as needed */
+  border-bottom-left-radius: 10px; /* Adjust the radius as needed */
+}
+
+.custom-table .last-td {
+  border-top-right-radius: 10px; /* Adjust the radius as needed */
+  border-bottom-right-radius: 10px; /* Adjust the radius as needed */
+}
 </style>
