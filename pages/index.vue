@@ -1,7 +1,7 @@
 <template>
   <v-row justify="center" align="center">
     <v-col>
-      <LoaderWidgets v-if="this.fetchedData" :dataChart="this.fetchedData"></LoaderWidgets>
+      <LoaderWidgets v-if="this.fetchedData" :dataChart="this.preparedData"></LoaderWidgets>
     </v-col>
   </v-row>
 </template>
@@ -15,10 +15,10 @@ export default {
   },
   async mounted() {
     // Fetch your data
-    const response = await fetch('./barplot_test.json');
-    // const response = await fetch('./raw_data_OEBD00200002UK0.json');
+    // const response = await fetch('./barplot_test.json');
+    const response = await fetch('./OEBD00700000NI.json');
     this.fetchedData = await response.json();
-    // this.fetchDataAndRender(this.fetchedData)
+    this.fetchDataAndRender(this.fetchedData)
   },
   methods: {
     async fetchDataAndRender(data) {

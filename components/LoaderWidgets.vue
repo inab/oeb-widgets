@@ -1,9 +1,8 @@
 <template>
     <v-row justify="center" align="center">
     <v-col>
-      <ScatterPlot v-if="dataChart && dataChart.type == 'scatter'" :data="dataChart" />
-      <BarPlot v-if="dataChart && dataChart.type == 'bar'" :data="dataChart" />
-      
+      <ScatterPlot v-if="dataChart && dataChart.inline_data.visualization.type == '2D-plot'" :dataJson="dataChart" />
+      <BarPlot v-if="dataChart && dataChart.inline_data.visualization.type == 'bar-plot'" :dataJson="dataChart" />
     </v-col>
   </v-row>
 </template>

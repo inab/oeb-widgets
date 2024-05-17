@@ -14,7 +14,7 @@ import Plotly from 'plotly.js-dist';
 export default {
   name: 'ScatterPlot',
   props: {
-    data: {
+    dataJson: {
       type: Object,
       required: true
     }
@@ -25,7 +25,7 @@ export default {
   },
   methods: {
     renderChart() {
-      const plotData = [this.data]; // Asegúrate de que los datos estén en un array
+      const plotData = [this.dataJson]; // Asegúrate de que los datos estén en un array
 
       const layout = {
         title: 'Scatter Plot',
