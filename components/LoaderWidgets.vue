@@ -9,8 +9,14 @@
 </template>
 
 <script>
+import BarPlot from './BarPlot.vue';
+import ScatterPlot from './ScatterPlot.vue';
+
 export default {
     name: 'LoaderWidgets',
+    components:{
+      BarPlot, ScatterPlot
+    },
     props: {
       data: {
         type: Array,
