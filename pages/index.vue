@@ -11,30 +11,13 @@ export default {
   data() {
     return {
       fetchedData: null,
-      scatterChartData: [
-        {
-          x: [1, 2, 3, 4, 5],
-          y: [1, 2, 4, 8, 16],
-          mode: 'markers',
-          type: 'scatter',
-          name: 'Sample Data',
-          marker: { size: 12 }
-        }
-      ],
-      barChartData: [
-        {
-          x: ['A', 'B', 'C', 'D'],
-          y: [10, 20, 30, 40],
-          type: 'bar'
-        }
-      ]
     }
   },
   async mounted() {
     // Fetch your data
-    const response = await fetch('./data_test.json');
+    const response = await fetch('./barplot_test.json');
+    // const response = await fetch('./raw_data_OEBD00200002UK0.json');
     this.fetchedData = await response.json();
-    console.log(this.fetchedData)
     // this.fetchDataAndRender(this.fetchedData)
   },
   methods: {

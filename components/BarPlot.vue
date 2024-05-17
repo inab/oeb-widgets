@@ -24,8 +24,21 @@
     },
     methods: {
       renderChart() {
-        Plotly.newPlot(this.$refs.chart, this.data, {});
-      }
+      const plotData = [this.data]; // Asegúrate de que los datos estén en un array
+
+      const layout = {
+        title: 'Bar Plot',
+        xaxis: {
+          title: 'Categories'
+        },
+        yaxis: {
+          title: 'Values'
+        }
+      };
+
+      // Configurar el gráfico de barras
+      Plotly.newPlot(this.$refs.chart, plotData, layout);
+    }
     }
   };
   </script>

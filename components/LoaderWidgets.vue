@@ -2,7 +2,7 @@
     <v-row justify="center" align="center">
     <v-col>
       <ScatterPlot v-if="dataChart && dataChart.type == 'scatter'" :data="dataChart" />
-      <!-- <BarPlot v-if="data[0].type == 'bar'" :data="data" /> -->
+      <BarPlot v-if="dataChart && dataChart.type == 'bar'" :data="dataChart" />
       
     </v-col>
   </v-row>
