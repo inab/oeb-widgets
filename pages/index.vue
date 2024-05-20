@@ -16,7 +16,8 @@ export default {
   async mounted() {
     // Fetch your data
     // const response = await fetch('./barplot_test.json');
-    const response = await fetch('./OEBD00700000NI.json');
+    // const response = await fetch('./OEBD00700000NI.json');
+    const response = await fetch('./raw_data_OEBD00200002UK0.json');
     this.fetchedData = await response.json();
     this.fetchDataAndRender(this.fetchedData)
   },
