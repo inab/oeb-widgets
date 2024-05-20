@@ -72,6 +72,34 @@ export default {
       required: true
     }
   },
+  data() {
+    return {
+      loading: false,
+      datasetId: null,
+      datasetModDate: null,
+      datasetPolarity: null,
+      visualizationData: null,
+      formattedDate: null,
+      originalData: null,
+      layout: null,
+      markerColors: ['#D62728', '#FF7F0E', '#8C564B', '#E377C2', '#4981B6', '#BCBD22', '#9467BD', '#0C9E7B', '#7F7F7F', '#31B8BD', '#FB8072', '#62D353'],
+      colorIndex: 0,
+      symbols: ['circle', 'triangle-up', 'pentagon', 'cross', 'x', 'star', 'star-diamond', 'square', 'diamond-tall'],
+      currentIndex: 0,
+      xValues: [],
+      yValues: [],
+      toolID: [],
+      allToolID: [],
+      dataPoints: [],
+      paretoPoints: [],
+      optimalXaxis: null,
+      optimalYaxis: null,
+      // Error messages
+      showMessageError: false,
+      dismissCountDown: 0,
+
+    };
+  },
   mounted() {
     // Renderizar el scatter plot cuando el componente se monta
     this.renderChart();
