@@ -126,5 +126,58 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos específicos del componente */
+.butns {
+  position: absolute;
+  top: 14px;
+  margin-top: 10px;
+  z-index: 1
+}
+
+.menu-item:hover {
+  background-color: #f0f0f0;
+  /* Change background color on hover */
+  cursor: pointer;
+  /* Change cursor on hover */
+}
+
+.custom-btn-toggle .v-btn:first-child {
+  border-top-left-radius: 10px;
+  /* Set rounded corner on top-left side of first button */
+  border-bottom-left-radius: 10px;
+  /* Set rounded corner on bottom-left side of first button */
+}
+
+.custom-btn-toggle .v-btn:last-child {
+  border-top-right-radius: 10px;
+  /* Set rounded corner on top-right side of last button */
+  border-bottom-right-radius: 10px;
+  /* Set rounded corner on bottom-right side of last button */
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.custom-table th{
+background-color: lightgray;
+color: white;
+
+}
+
+.custom-table td {
+  border: 1px solid #e0e0e0;
+  padding: 10px;
+  text-align: center;
+}
+
+.custom-table .first-th {
+  border-top-left-radius: 10px; /* Adjust the radius as needed */
+  border-bottom-left-radius: 10px; /* Adjust the radius as needed */
+}
+
+.custom-table .last-td {
+  border-top-right-radius: 10px; /* Adjust the radius as needed */
+  border-bottom-right-radius: 10px; /* Adjust the radius as needed */
+}
 </style>
