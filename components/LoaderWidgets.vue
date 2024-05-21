@@ -1,5 +1,5 @@
 <template>
-    <v-row justify="center" align="center">
+    <v-row>
     <v-col>
       <ScatterPlot v-if="dataChart && dataChart.inline_data.visualization.type == '2D-plot'" :dataJson="dataChart" />
       <BarPlot v-if="dataChart && dataChart.inline_data.visualization.type == 'bar-plot'" :dataJson="dataChart" />

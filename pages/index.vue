@@ -1,5 +1,5 @@
 <template>
-  <v-row justify="center" align="center">
+  <v-row>
     <v-col id="app" data-app>
       <LoaderWidgets v-if="this.fetchedData" :dataChart="this.preparedData"></LoaderWidgets>
     </v-col>

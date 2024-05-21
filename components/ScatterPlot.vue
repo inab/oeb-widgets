@@ -1,5 +1,5 @@
 <template>
-    <v-container>
+    <v-container fluid>
     <v-row>
       <v-col cols="8">
         <div class="butns">
@@ -11,11 +11,11 @@
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
                 <v-btn outlined v-bind="attrs" v-on="on">
-                  Classification
+                  {{classificationButtonText}}
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item class="menu-item">
+                <v-list-item class="menu-item"  @click="noClassification" outlined>
                   <v-list-item-title>No Classification</v-list-item-title>
                 </v-list-item>
                 <v-list-item class="menu-item">
@@ -29,10 +29,12 @@
                 </v-list-item>
               </v-list>
             </v-menu>
-            <!-- End of Dropdown for Download -->
-            <v-btn>
-              Optimal View
+
+            <!-- Reset View / Optimal view -->
+            <v-btn @click="toggleView" outlined>
+              {{ viewButtonText }}
             </v-btn>
+
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
@@ -123,7 +125,12 @@ export default {
       // Error messages
       showMessageError: false,
       dismissCountDown: 0,
-
+      // View Button
+      viewApplied: false,
+      // Views by Classification
+      viewKmeans: false,
+      viewSquare: false,
+      viewDiagonal: false,
     };
   },
   mounted() {
@@ -131,6 +138,8 @@ export default {
     this.renderChart();
   },
   methods: {
+    // CREATE PLOT, FUNCTION PRINCIPAL
+    // ----------------------------------------------------------------
     async renderChart() {
       this.loading = true
       
@@ -315,22 +324,211 @@ export default {
 
 
     },
-    // Color of the traces
+
+
     // ----------------------------------------------------------------
+    // PARETO FRONTIER
+    // ----------------------------------------------------------------
+    // Function to format the optimal display direction
+    formatOptimalDisplay(optimization) {
+      switch (optimization) {
+        case 'top-left':
+          return ['min', 'max'];
+        case 'top-right':
+          return ['max', 'max'];
+        case 'bottom-left':
+          return ['min', 'min'];
+        case 'bottom-right':
+          return ['max', 'min'];
+        default:
+          return ['min', 'min'];
+      }
+    },
+    
+    // ----------------------------------------------------------------
+    // UPDATE PLOT, INTERACTIONS
+    // ----------------------------------------------------------------
+    // Update the graph based on the selected trace
+    updatePlotOnSelection(traceIndex) {
+      traceIndex = traceIndex - 2;
+
+      const toolHidden = this.dataPoints[traceIndex].hidden;
+
+      if (!toolHidden) {
+        const visibleTools = this.dataPoints.filter((tool) => !tool.hidden);
+        if (visibleTools.length <= 4) {
+          this.showMessageError = true;
+          this.dismissCountDown = 5;
+
+          const timer = setInterval(() => {
+            if (this.dismissCountDown > 0) {
+              this.dismissCountDown -= 1;
+            } else {
+              this.showMessageError = false;
+              clearInterval(timer);
+            }
+          }, 1000);
+          return false;
+        }
+      } else {
+        this.showMessageError = false;
+      }
+
+      this.dataPoints[traceIndex].hidden = !toolHidden;
+
+      const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
+
+      let direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+      const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+
+      const newTraces = { 
+        x: [newParetoPoints.map((point) => point[0])], 
+        y: [newParetoPoints.map((point) => point[1])] 
+      };
+
+      Plotly.update(this.$refs.chart, newTraces, {}, 1);
+      // return true;
+    },
+
+
+    // ----------------------------------------------------------------
+    // CLASSIFICATIONS
+    // ----------------------------------------------------------------
+
+    // NO CLASSIFICATION
+    // ----------------------------------------------------------------
+    noClassification(){
+      this.viewKmeans = false;
+      this.viewSquare = false;
+      this.viewDiagonal = false;
+      // this.showShapesKmeans = false;
+      // this.showShapesSquare = false;
+      // this.showAnnotationSquare = false;
+
+       // Reset Plot
+      const plot = document.getElementById('scatterPlot')
+      if (plot && plot.data) {
+        const numTraces = plot.data.length;
+        const visibleArray = Array(numTraces).fill(true);
+
+        // Reset Pareto Frontier
+        this.dataPoints.forEach(array => { array.hidden = false; });
+        const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
+        let direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+        const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+
+        // Update the trace of the Pareto frontier
+        const newTraces = {
+          x: [newParetoPoints.map((point) => point[0])],
+          y: [newParetoPoints.map((point) => point[1])]
+        };
+
+
+        // Modificar despues
+        // const layout = {
+        //   shapes: false ? shapes : [],
+        //   annotations: getOptimizationArrow(data.value.visualization.optimization)
+        // };
+
+        // Update only the trace data, without changing the layout
+        Plotly.update(this.$refs.chart, newTraces, {}, 1);
+        Plotly.restyle(this.$refs.chart, { visible: visibleArray });
+      }
+    },
+
+
+    // ----------------------------------------------------------------
+    // SCATTER PLOT VIEWS
+    // ----------------------------------------------------------------
+    // Toggle Visibility
+    toggleView() {
+      if (this.viewApplied) {
+        this.optimalView();
+      } else {
+        this.resetView();
+      }
+    },
+    // Optimal View (Optimal dimensions)
+    optimalView() {
+      const layout = {
+        xaxis: {
+          range: [this.optimalXaxis[0], this.optimalXaxis[1]],
+          title: {
+            text: this.visualizationData.x_axis,
+            font: {
+              family: 'Arial, sans-serif',
+              size: 16,
+              color: 'black',
+              weight: 'bold',
+            },
+          }
+        },
+        yaxis: {
+          range: [this.optimalYaxis[0], this.optimalYaxis[1]],
+          title: {
+            text: this.visualizationData.y_axis,
+            font: {
+              family: 'Arial, sans-serif',
+              size: 16,
+              color: 'black',
+              weight: 'bold',
+            },
+          },
+        },
+      };
+      Plotly.relayout(this.$refs.chart, layout);
+      this.viewApplied = false; // Optimal view is applied
+    },
+    // Reset View (Real dimensions)
+    resetView() {
+      const layout = {
+        xaxis: {
+          range: [0, Math.max(...this.xValues) + (Math.min(...this.xValues) / 3)],
+          title: {
+            text: this.visualizationData.x_axis,
+            font: {
+              family: 'Arial, sans-serif',
+              size: 16,
+              color: 'black',
+              weight: 'bold',
+            },
+          }
+        },
+        yaxis: {
+          range: [0, Math.max(...this.yValues) + 0.05],
+          title: {
+            text: this.visualizationData.y_axis,
+            font: {
+              family: 'Arial, sans-serif',
+              size: 16,
+              color: 'black',
+              weight: 'bold',
+            },
+          },
+        }
+      };
+      Plotly.relayout(this.$refs.chart, layout);
+      this.viewApplied = true;
+
+    },
+
+
+    // ----------------------------------------------------------------
+    // LAYOUT CHART
+    // ----------------------------------------------------------------
+    // Color of the traces
     getColor() {
       const currentColor = this.markerColors[this.colorIndex];
       this.colorIndex = (this.colorIndex + 1) % this.markerColors.length;
       return currentColor;
     },
     // Symbol of the traces
-    // ----------------------------------------------------------------
     getSymbol() {
       const currentSymbol = this.symbols[this.currentIndex];
       this.currentIndex = (this.currentIndex + 1) % this.symbols.length;
       return currentSymbol;
     },
     // This function creates the annotations for the optimization arrow
-    // ----------------------------------------------------------------
     getOptimizationArrow(optimization) {
       const arrowAnnotations = [];
       let arrowX, arrowY;
@@ -391,7 +589,6 @@ export default {
       return arrowAnnotations;
     },
     // Image Position
-    // ----------------------------------------------------------------
     getImagePosition(optimization) {
       const ImagePositions = [];
 
@@ -439,66 +636,9 @@ export default {
       return ImagePositions
 
     },
-    // Function to format the optimal display direction
+
+
     // ----------------------------------------------------------------
-    formatOptimalDisplay(optimization) {
-      switch (optimization) {
-        case 'top-left':
-          return ['min', 'max'];
-        case 'top-right':
-          return ['max', 'max'];
-        case 'bottom-left':
-          return ['min', 'min'];
-        case 'bottom-right':
-          return ['max', 'min'];
-        default:
-          return ['min', 'min'];
-      }
-    },
-    // ----------------------------------------------------------------
-    // Update the graph based on the selected trace
-    // ----------------------------------------------------------------
-    updatePlotOnSelection(traceIndex) {
-      traceIndex = traceIndex - 2;
-
-      const toolHidden = this.dataPoints[traceIndex].hidden;
-
-      if (!toolHidden) {
-        const visibleTools = this.dataPoints.filter((tool) => !tool.hidden);
-        if (visibleTools.length <= 4) {
-          this.showMessageError = true;
-          this.dismissCountDown = 5;
-
-          const timer = setInterval(() => {
-            if (this.dismissCountDown > 0) {
-              this.dismissCountDown -= 1;
-            } else {
-              this.showMessageError = false;
-              clearInterval(timer);
-            }
-          }, 1000);
-          return false;
-        }
-      } else {
-        this.showMessageError = false;
-      }
-
-      this.dataPoints[traceIndex].hidden = !toolHidden;
-
-      const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
-
-      let direction = this.formatOptimalDisplay(this.visualizationData.optimization);
-      const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
-
-      const newTraces = { 
-        x: [newParetoPoints.map((point) => point[0])], 
-        y: [newParetoPoints.map((point) => point[1])] 
-      };
-
-      Plotly.update(this.$refs.chart, newTraces, {}, 1);
-      // return true;
-    },
-
     // FORMAT DATE
     // ----------------------------------------------------------------
     formatDateString(dateString) {
@@ -509,6 +649,25 @@ export default {
         day: "numeric",
       });
     },
+  },
+  computed: {
+    // Text for the View Button
+    viewButtonText() {
+      return this.viewApplied ? 'Optimal View' : 'Reset View';
+    },
+    // Text for the Classification Button
+    classificationButtonText() {
+      if (this.viewKmeans) {
+        return 'K-Means Clustering';
+      } else if (this.viewSquare) {
+        return 'Square Quartiles';
+      } else if (this.viewDiagonal){
+        return 'Diagonal Quartiles';
+      } else {
+        return 'Classification'
+      }
+    }
+
   }
 };
 </script>
