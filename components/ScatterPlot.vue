@@ -15,7 +15,7 @@
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item class="menu-item"  @click="noClassification" outlined>
+                <v-list-item class="menu-item"  @click="noClassification">
                   <v-list-item-title>No Classification</v-list-item-title>
                 </v-list-item>
                 <v-list-item class="menu-item">
@@ -69,6 +69,15 @@
       <v-col cols="8" id="chartCapture">
         <div ref="chart" id="scatterPlot"></div>
         <br>
+
+        <!-- Error message -->
+        <CustomAlert
+          v-if="showMessageError"
+          title="Warning"
+          message="At least four participants are required for the benchmark!"
+          type="warning"
+        />
+
         <!-- ID AND DATE TABLE -->
         <v-simple-table class="custom-table">
           <tbody>
@@ -89,11 +98,15 @@
 <script>
 // Importación de Plotly
 import Plotly from 'plotly.js-dist';
+import CustomAlert from '~/components/CustomAlert.vue';
 const pf = require('pareto-frontier');
 
 
 export default {
   name: 'ScatterPlot',
+  components:{
+    CustomAlert
+  },
   props: {
     dataJson: {
       type: Object,
@@ -131,6 +144,8 @@ export default {
       viewKmeans: false,
       viewSquare: false,
       viewDiagonal: false,
+      showAlert: false
+      
     };
   },
   mounted() {
