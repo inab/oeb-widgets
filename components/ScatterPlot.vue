@@ -4,11 +4,32 @@
       <v-col cols="8">
         <div class="butns">
 
-          <!-- Buttons -->
+          <!-- BUTTONS -->
           <v-btn-toggle class="custom-btn-toggle">
-            <v-btn outlined>
-              Sort & Classify Data
-            </v-btn outlined>
+
+            <!-- Dropdown for Clas -->
+            <v-menu offset-y>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn outlined v-bind="attrs" v-on="on">
+                  Classification
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item class="menu-item">
+                  <v-list-item-title>No Classification</v-list-item-title>
+                </v-list-item>
+                <v-list-item class="menu-item">
+                  <v-list-item-title>Square Quartiles</v-list-item-title>
+                </v-list-item>
+                <v-list-item class="menu-item">
+                  <v-list-item-title>Diagonal Quartiles</v-list-item-title>
+                </v-list-item>
+                <v-list-item class="menu-item">
+                  <v-list-item-title>K-Means Clustering</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+            <!-- End of Dropdown for Download -->
             <v-btn>
               Optimal View
             </v-btn>
@@ -21,14 +42,17 @@
               </template>
               <v-list>
                 <v-list-item class="menu-item">
-                  <v-list-item-title>SVG</v-list-item-title>
+                  <v-list-item-title>PNG</v-list-item-title>
                 </v-list-item>
                 <v-list-item class="menu-item">
-                  <v-list-item-title>PNG</v-list-item-title>
+                  <v-list-item-title>PDF</v-list-item-title>
+                </v-list-item>
+                <v-list-item class="menu-item">
+                  <v-list-item-title>SVG</v-list-item-title>
                 </v-list-item>
                 <v-divider></v-divider>
                 <v-list-item class="menu-item">
-                  <v-list-item-title>PDF</v-list-item-title>
+                  <v-list-item-title>JSON (raw data)</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>
