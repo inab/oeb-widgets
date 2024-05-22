@@ -24,7 +24,7 @@
                 <v-list-item class="menu-item" @click="toggleDiagonalQuartile">
                   <v-list-item-title>Diagonal Quartiles</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item">
+                <v-list-item class="menu-item" @click="toggleKmeansVisibility">
                   <v-list-item-title>K-Means Clustering</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -534,6 +534,33 @@ export default {
         this.optimalView()
       }
 
+      // Update Kmeans Clustering
+      // ----------------------------------------------------------------
+      if (this.viewKmeans === true) {
+          // If the K-means view is active, K-means Clustering is recalculated, otherwise it is not.
+
+          // Create a list of visible tools with their hiding status
+          const visibleTools = this.toolID.map((tool, index) => ({
+            name: tool,
+            hidden: this.dataPoints[index].hidden
+          })).filter(tool => !tool.hidden);
+          // List of visible tools
+          const visibleToolNames = visibleTools.map(tool => tool.name);
+
+          // Recalculate Clustering
+          let better = this.visualizationData.optimization
+          this.createShapeClustering(updatedVisibleTools, visibleToolNames, better, this.allToolID);
+          this.showShapesKmeans = true;
+
+
+          // Create a new layout
+          const layout = {
+            shapes: this.showShapesKmeans ? this.shapes : [],
+            annotations: this.getOptimizationArrow(this.visualizationData.optimization).concat(this.annotationKmeans)
+          };
+          Plotly.update(this.$refs.chart, newTraces, layout, 1);
+      }
+
       Plotly.update(this.$refs.chart, newTraces, {}, 1);
       // return true;
     },
@@ -858,8 +885,8 @@ export default {
     // ----------------------------------------------------------------
     // DIAGONAL QUARTILES
     // ----------------------------------------------------------------
+    // Function to toggle the visibility of the Diagonal Quartiles
     toggleDiagonalQuartile (){
-      // Classification
       const plot = document.getElementById('scatterPlot')
       if (plot && plot.data) {
         const numTraces = plot.data.length;
@@ -1102,6 +1129,219 @@ export default {
         this.tableData.push({ tool_id: toolName, cuartil: quartile, label: label });
       });
     },
+
+    // ----------------------------------------------------------------
+    // K-MEANS CLUSTERING
+    // ----------------------------------------------------------------
+    // Function to toggle the visibility of the Kmeans Clustering
+    toggleKmeansVisibility () {
+
+      const plot = document.getElementById('scatterPlot')
+      if (plot && plot.data) {
+        const numTraces = plot.data.length;
+
+        // Reset visibilities. Hide the Square and Show the Kmeans
+        this.showShapesSquare = false;
+        this.showAnnotationSquare = false;
+        this.viewSquare = false;
+        this.viewDiagonal = false;
+        this.showShapesKmeans = true;
+        this.viewKmeans = true;
+
+        // Update visibility of Points
+        this.dataPoints.forEach(array => { array.hidden = false; });
+
+        // Calculate Pareto Frontier
+        const updatedVisibleTools = this.dataPoints.filter(tool => !tool.hidden);
+        const direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+        const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+        const newTraces = { x: [newParetoPoints.map(point => point[0])], y: [newParetoPoints.map(point => point[1])] };
+
+        // Update visibility of traces in legend
+        const visibleArray = Array(numTraces).fill(true);
+        const layout = {
+          shapes: false ? this.shapes : [],
+          annotations: this.getOptimizationArrow(this.visualizationData.optimization)
+        };
+        Plotly.update(this.$refs.chart, newTraces, layout, 1);
+        Plotly.update(this.$refs.chart, { visible: visibleArray });
+
+        // Create shape clustering
+        let better = this.visualizationData.optimization
+        this.createShapeClustering(this.dataPoints, this.toolID, better, this.allToolID);
+
+      }else{
+        console.error("The graph with id 'scatterPlot' has no data")
+      } 
+
+    },
+
+    // Create visualization Kmeans Clustering
+    createShapeClustering (dataPoints, toolIDVisible, better, allToolID) {
+      clusterMaker.k(4);
+      clusterMaker.iterations(500);
+      clusterMaker.data(dataPoints);
+
+      // Obtener los resultados de los clusters
+      let results = clusterMaker.clusters();
+      let sortedResults = JSON.parse(JSON.stringify(results));
+
+      this.orderResultKMeans(sortedResults, better)
+
+      const groupedDataPoints = this.assignGroupToDataPoints(dataPoints, sortedResults);
+      this.createDataPointForTables(toolIDVisible, groupedDataPoints, allToolID)
+
+
+      // Crear shapes basados en los clusters
+      this.shapes = sortedResults.map((cluster) => {
+        const xValues = cluster.points.map(point => point[0]);
+        const yValues = cluster.points.map(point => point[1]);
+        return {
+          type: 'rect',
+          xref: 'x',
+          yref: 'y',
+          x0: Math.min(...xValues),
+          y0: Math.min(...yValues),
+          x1: Math.max(...xValues),
+          y1: Math.max(...yValues),
+          opacity: 0.2,
+          fillcolor: 'rgba(0, 72, 129, 183)',
+          line: {
+            color: '#2A6CAB',
+          }
+        };
+      });
+
+      // Crear annotations para los centroides de los clusters
+      let count = 0;
+      this.annotationKmeans = sortedResults.map((cluster) => {
+        const centroidX = cluster.centroid[0];
+        const centroidY = cluster.centroid[1];
+        count++;
+
+        return {
+          xref: 'x',
+          yref: 'y',
+          x: centroidX,
+          xanchor: 'right',
+          y: centroidY,
+          yanchor: 'bottom',
+          text: count,
+          showarrow: false,
+          font: {
+            size: 30,
+            color: '#5A88B5'
+          }
+        };
+      });
+
+      const layout = {
+        shapes: this.showShapesKmeans ? this.shapes : [],
+        annotations: this.getOptimizationArrow(this.visualizationData.optimization).concat(this.annotationKmeans),
+      };
+      Plotly.update(this.$refs.chart, {}, layout);
+
+    },
+
+    // Sorted Results K-means
+    orderResultKMeans (sortedResults, better) {
+      // normalize data to 0-1 range
+      let centroids_x = []
+      let centroids_y = []
+      
+      sortedResults.forEach((element) => {
+        centroids_x.push(element.centroid[0])
+        centroids_y.push(element.centroid[1])
+      })
+
+      let [x_norm, y_norm] = this.normalize_data(centroids_x, centroids_y)
+
+      let scores = [];
+      if (better == "top-right") {
+        for (let i = 0; i < x_norm.length; i++) {
+          let distance = x_norm[i] + y_norm[i];
+          scores.push(distance);
+          sortedResults[i]['score'] = distance;
+        };
+
+      } else if (better == "bottom-right") {
+        for (let i = 0; i < x_norm.length; i++) {
+          let distance = x_norm[i] + (1 - y_norm[i]);
+          scores.push(distance);
+          sortedResults[i]['score'] = distance;
+        };
+      } else if (better == "top-left") {
+        for (let i = 0; i < x_norm.length; i++) {
+          let distance = (1 - x_norm[i]) + y_norm[i];
+          scores.push(distance);
+          sortedResults[i]['score'] = distance;
+        };
+      };
+
+      this.sortByKey(sortedResults, "score");
+    },
+
+    // Normalize data by Kmeans Clustering
+    normalize_data (x_values, y_values) {
+      let maxX = Math.max.apply(null, x_values);
+      let maxY = Math.max.apply(null, y_values);
+
+      let x_norm = x_values.map(function (e) {
+        return e / maxX;
+      });
+
+      let y_norm = y_values.map(function (e) {
+        return e / maxY;
+      });
+      return [x_norm, y_norm];
+    },
+
+    // Sorting keys
+    sortByKey(array, key) {
+      return array.sort(function (a, b) {
+        var x = a[key]; var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0)) * -1;
+      });
+    },
+
+    // Assigning group for tools
+    assignGroupToDataPoints (dataPoints, sortedResults) {
+      const groupedDataPoints = [];
+      for (let i = 0; i < dataPoints.length; i++) {
+        const dataPoint = dataPoints[i];
+        for (let j = 0; j < sortedResults.length; j++) {
+          const group = sortedResults[j];
+          // Verificar si el punto está en el grupo
+          if (group.points.some(groupPoint => this.isEqual(groupPoint, dataPoint))) {
+            groupedDataPoints.push([...dataPoint, j + 1]);
+            break;
+          }
+        }
+      }
+      return groupedDataPoints;
+    },
+
+    // Función de utilidad para comparar dos puntos y verificar si son iguales
+    isEqual (point1, point2) {
+      return point1[0] === point2[0] && point1[1] === point2[1];
+    },
+
+    // Create data for Table
+    createDataPointForTables (visibleTools, groupedDataPoints, allToolID) {
+      this.tableData = [];
+      allToolID.forEach((tool) => {
+        const index = visibleTools.indexOf(tool);
+        let cuartil = 0;
+        let label = '--';
+        if (index !== -1) {
+          cuartil = groupedDataPoints[index][2];
+          label = cuartil.toString();
+        }
+
+        this.tableData.push({ tool_id: tool, cuartil: cuartil, label: label });
+      })
+    },
+
 
 
     // ----------------------------------------------------------------
