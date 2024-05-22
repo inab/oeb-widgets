@@ -17,8 +17,8 @@
               <v-list>
                 <v-list-item class="menu-item"  @click="noClassification">
                   <v-list-item-title>No Classification</v-list-item-title>
-                </v-list-item>
-                <v-list-item class="menu-item">
+                </v-list-item >
+                <v-list-item class="menu-item" @click="toggleQuartilesVisibility">
                   <v-list-item-title>Square Quartiles</v-list-item-title>
                 </v-list-item>
                 <v-list-item class="menu-item">
@@ -65,11 +65,10 @@
     </v-row>
 
     <v-row class="mt-4">
-      <!-- Chart -->
       <v-col cols="8" id="chartCapture">
+        <!-- CHART -->
         <div ref="chart" id="scatterPlot"></div>
-        <br>
-
+        
         <!-- Error message -->
         <CustomAlert
           v-if="showMessageError"
@@ -91,15 +90,64 @@
         </v-simple-table>
       </v-col>
 
+      <!-- Table -->
+      <v-col cols="4" >
+        <v-simple-table class="tools-table" height="850px" fixed-header v-if="tableData.length > 0" >
+          <thead>
+            <tr>
+              <th class="tools-th">Participants</th>
+              <th class="classify-th">{{ viewKmeans ? 'Clusters' : 'Quartile' }}
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <i
+                      class="material-icons custom-alert-icon"
+                      v-if="viewSquare"
+                      v-bind="attrs"
+                      v-on="on"
+                    >
+                      {{ icon }}
+                    </i>
+                  </template>
+                  <div class="quartile-message">
+                    <p><b>The Square quartile label</b></p>
+                    <p>Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
+                  denotes quartiles above average and 'Bottom (B)' those below, offering clarity in rankin</p></div>
+                </v-tooltip>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in tableData" :key="item.tool_id"
+                  :class="{ 'quartil-zero': item.cuartil === 0 }">
+              <td class="toolColumn" @click="handleTableRowClick(index)">
+                <div class="color-box"
+                  :style="{ backgroundColor: markerColors[index % markerColors.length], opacity: (item.cuartil === 0 ? 0.5 : 1) }">
+                </div>
+                  <span>{{ item.tool_id }}</span>
+              </td>
+
+              <td :class="'quartil-' + item.cuartil">{{ item.label }}</td>
+            </tr>
+          </tbody>
+
+        </v-simple-table>
+      </v-col>
+
     </v-row>
   </v-container>
 </template>
 
 <script>
-// Importación de Plotly
+// IMPORTS
 import Plotly from 'plotly.js-dist';
+import * as statistics from 'simple-statistics';
 import CustomAlert from '~/components/CustomAlert.vue';
+// REQUIREMENTS
+var clusterMaker = require('clusters');
 const pf = require('pareto-frontier');
+const html2canvas = require('html2canvas');
+const { jsPDF } = require('jspdf');
+
 
 
 export default {
@@ -144,7 +192,20 @@ export default {
       viewKmeans: false,
       viewSquare: false,
       viewDiagonal: false,
-      showAlert: false
+      // quartileData / Table data
+      tableData: [],
+      // Icon Table
+      icon: 'info',
+      // Square Quartiles
+      showShapesSquare: false,
+      showAnnotationSquare: false,
+      // Diagonal Quartiles
+      showShapesDiagonal: false,
+      // K-means Clustering
+      showShapesKmeans:false,
+      shapes: [],
+      annotationKmeans: [],
+
       
     };
   },
@@ -359,6 +420,47 @@ export default {
           return ['min', 'min'];
       }
     },
+
+    // ACTIONS FOR TABLE
+    // ----------------------------------------------------------------
+    // Handle the click on the table
+    handleTableRowClick (index) {
+      const traceIndex = index + 2; // Adjust the index
+      this.toggleTraceVisibility(traceIndex);
+      this.updatePlotOnSelection(traceIndex)
+    },
+
+    // Toggle trace visibility
+    toggleTraceVisibility (traceIndex) {
+      const scatterPlotElement = document.getElementById('scatterPlot');
+      const plotlyData = scatterPlotElement.data;
+      const plotlyLayout = scatterPlotElement.layout;
+
+      // Check the visibility state of the trace
+      let isVisible = plotlyData[traceIndex].visible;
+      if (isVisible === undefined) {
+        isVisible = true
+      }
+
+      // Count the number of currently visible traces
+      let visibleCount = 0;
+      plotlyData.forEach(trace => {
+        if (trace.visible !== 'legendonly') {
+          visibleCount++;
+        }
+      });
+
+      // If there are only four visible traces and the trace being toggled is currently visible, return without changing its visibility
+      if (visibleCount === 6 && isVisible !== 'legendonly') {
+        return;
+      }
+
+      // Update the visibility state of the trace
+      plotlyData[traceIndex].visible = isVisible === true ? 'legendonly' : true;
+
+      // Update the chart with the new data
+      Plotly.react(this.$refs.chart, plotlyData, plotlyLayout);
+    },
     
     // ----------------------------------------------------------------
     // UPDATE PLOT, INTERACTIONS
@@ -401,9 +503,31 @@ export default {
         y: [newParetoPoints.map((point) => point[1])] 
       };
 
+      // Update Square Quartiles
+      // ----------------------------------------------------------------
+      if (this.viewSquare === true) {
+        // If the Square view is active, the quartiles are calculated with the visible traces
+        const updatedXCoordinates = updatedVisibleTools.map((participant) => participant[0]);
+        const updatedYCoordinates = updatedVisibleTools.map((participant) => participant[1]);
+
+        // Create a list of visible tools with their hiding status
+        const visibleTools = this.toolID.map((tool, index) => ({
+          name: tool,
+          hidden: this.dataPoints[index].hidden
+        })).filter(tool => !tool.hidden);
+
+        // List of visible tools
+        const visibleToolNames = visibleTools.map(tool => tool.name);
+        // Update data with visible tools
+        this.calculateQuartiles(updatedXCoordinates, updatedYCoordinates, visibleToolNames);
+        this.optimalView()
+      }
+
       Plotly.update(this.$refs.chart, newTraces, {}, 1);
       // return true;
     },
+
+    
 
 
     // ----------------------------------------------------------------
@@ -416,9 +540,9 @@ export default {
       this.viewKmeans = false;
       this.viewSquare = false;
       this.viewDiagonal = false;
-      // this.showShapesKmeans = false;
-      // this.showShapesSquare = false;
-      // this.showAnnotationSquare = false;
+      this.showShapesKmeans = false;
+      this.showShapesSquare = false;
+      this.showAnnotationSquare = false;
 
        // Reset Plot
       const plot = document.getElementById('scatterPlot')
@@ -440,15 +564,281 @@ export default {
 
 
         // Modificar despues
-        // const layout = {
-        //   shapes: false ? shapes : [],
-        //   annotations: getOptimizationArrow(data.value.visualization.optimization)
-        // };
+        const layout = {
+          shapes: false ? shapes : [],
+          annotations: this.getOptimizationArrow(this.visualizationData.optimization)
+        };
 
         // Update only the trace data, without changing the layout
         Plotly.update(this.$refs.chart, newTraces, {}, 1);
         Plotly.restyle(this.$refs.chart, { visible: visibleArray });
       }
+    },
+
+
+    // ----------------------------------------------------------------
+    // SQUARE QUARTILES
+    // ----------------------------------------------------------------
+    // Function to toggle the visibility of the Square Quartiles
+    toggleQuartilesVisibility () {
+
+      const plot = document.getElementById('scatterPlot')
+      if (plot && plot.data) {
+        const numTraces = plot.data.length;
+
+        // Reset visibilities. Hide the Kmeans and Show the Square
+        this.showShapesKmeans = false;
+        this.viewKmeans = false;
+        this.viewDiagonal = false;
+        this.viewSquare = true;
+        this.showShapesSquare = true;
+        this.showAnnotationSquare = true;
+
+        // Update visibility of Points
+        this.dataPoints.forEach(array => { array.hidden = false; });
+
+        // Calculate Pareto Frontier
+        const updatedVisibleTools = this.dataPoints.filter(tool => !tool.hidden);
+        const direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+        const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+        const newTraces = { x: [newParetoPoints.map(point => point[0])], y: [newParetoPoints.map(point => point[1])] };
+
+        const layout = {
+          shapes: false ? shapes : [],
+          annotations: this.getOptimizationArrow(this.visualizationData.optimization)
+        };
+
+        const visibleArray = Array(numTraces).fill(true);
+
+        Plotly.update(this.$refs.chart, newTraces, layout, 1);
+        Plotly.update(this.$refs.chart, { visible: visibleArray });
+
+        this.calculateQuartiles(this.xValues, this.yValues, this.toolID);
+        this.optimalView();
+      }
+    },
+
+    // Calculate square quartiles
+    calculateQuartiles (xValues, yValues, toolID){
+
+      const cuartilesX = statistics.quantile(xValues, 0.5);
+      const cuartilesY = statistics.quantile(yValues, 0.5);
+
+      let better = this.visualizationData.optimization
+      let allToolsWithId = this.allToolID
+      this.sortToolsForSquare(better, allToolsWithId, toolID, cuartilesX, cuartilesY, xValues, yValues)
+
+      // Lines 
+      const shapes = [
+        {
+          type: 'line',
+          x0: cuartilesX,
+          x1: cuartilesX,
+          y0: 0,
+          y1: Math.max(...yValues) + Math.max(cuartilesY),
+          line: {
+            color: '#C0D4E8',
+            width: 2,
+            dash: 'dash'
+          }
+        },
+        {
+          type: 'line',
+          y0: cuartilesY,
+          y1: cuartilesY,
+          x0: 0,
+          x1: Math.max(...xValues) + Math.max(cuartilesX),
+          line: {
+            color: '#C0D4E8',
+            width: 2,
+            dash: 'dash'
+          }
+        },
+      ];
+
+      // Annotations
+      this.annotationSquareQuartile(better)
+      // Add Quartiles
+      const layout = {
+        shapes: this.showShapesSquare ? shapes : [],
+      };
+      Plotly.relayout(this.$refs.chart, layout);
+    },
+
+    // Sort tools for Square Quartiles
+    sortToolsForSquare(better, allToolsWithId, visibleToolID, cuartilesX, cuartilesY, xValues, yValues) {
+      this.tableData = [];
+      allToolsWithId.forEach((tool) => { // Iterate over all tools
+        const index = visibleToolID.indexOf(tool);
+        const x = index !== -1 ? xValues[index] : null; // Get index and values x, y
+        const y = index !== -1 ? yValues[index] : null; // Get index and values x, y
+
+        let cuartil = 0;
+        let label = '--';
+
+        if (index !== -1) { // Si la herramienta está presente en visibleToolID
+          if (better === "bottom-right") {
+            if (x >= cuartilesX && y <= cuartilesY) {
+              cuartil = 1;
+              label = 'Top';
+            } else if (x >= cuartilesX && y > cuartilesY) {
+              cuartil = 3;
+              label = 'Interquartile';
+            } else if (x < cuartilesX && y > cuartilesY) {
+              cuartil = 4;
+              label = 'Bottom';
+            } else if (x < cuartilesX && y <= cuartilesY) {
+              cuartil = 2;
+              label = 'Interquartile';
+            }
+          } else if (better === "top-right") {
+            if (x >= cuartilesX && y < cuartilesY) {
+              cuartil = 3;
+              label = 'Interquartile';
+            } else if (x >= cuartilesX && y >= cuartilesY) {
+              cuartil = 1;
+              label = 'Top';
+            } else if (x < cuartilesX && y >= cuartilesY) {
+              cuartil = 2;
+              label = 'Interquartile';
+            } else if (x < cuartilesX && y < cuartilesY) {
+              cuartil = 4;
+              label = 'Bottom';
+            }
+          } else if (better === "top-left") {
+            if (x >= cuartilesX && y < cuartilesY) {
+              cuartil = 4;
+              label = 'Bottom';
+            } else if (x >= cuartilesX && y >= cuartilesY) {
+              cuartil = 2;
+              label = 'Interquartile';
+            } else if (x < cuartilesX && y >= cuartilesY) {
+              cuartil = 1;
+              label = 'Top';
+            } else if (x < cuartilesX && y < cuartilesY) {
+              cuartil = 3;
+              label = 'Interquartile';
+            }
+          }
+        }
+        this.tableData.push({ tool_id: tool, cuartil: cuartil, label: label });
+      });
+    },
+
+    // Annotation for Square Quartiles
+    annotationSquareQuartile (better){
+      // Create Annotation
+      let position = this.asignaPositionCuartil(better)
+      // Add label to the position (T, M, B)
+      const newAnnotation = position.map(({ position, numCuartil }) => {
+        let annotation = {};
+        switch (position) {
+          case 'top-left':
+            annotation = {
+              xref: 'paper',
+              yref: 'paper',
+              x: 0.01,
+              xanchor: 'left',
+              y: 1,
+              yanchor: 'top',
+              text: numCuartil,
+              showarrow: false,
+              font: {
+                size: 20,
+                color: '#5A88B5'
+              }
+            };
+            break;
+          case 'bottom-right':
+            annotation = {
+              xref: 'paper',
+              yref: 'paper',
+              x: 0.91,
+              xanchor: 'left',
+              y: 0.05,
+              yanchor: 'bottom',
+              text: numCuartil,
+              showarrow: false,
+              font: {
+                size: 20,
+                color: '#5A88B5'
+              }
+            };
+            break;
+          case 'bottom-left':
+            annotation = {
+              xref: 'paper',
+              yref: 'paper',
+              x: 0.01,
+              xanchor: 'left',
+              y: 0.10,
+              yanchor: 'top',
+              text: numCuartil,
+              showarrow: false,
+              font: {
+                size: 20,
+                color: '#5A88B5'
+              }
+            };
+            break;
+          case 'top-right':
+            annotation = {
+              xref: 'paper',
+              yref: 'paper',
+              x: 0.90,
+              xanchor: 'left',
+              y: 0.98,
+              yanchor: 'top',
+              text: numCuartil,
+              showarrow: false,
+              font: {
+                size: 20,
+                color: '#5A88B5'
+              }
+            };
+            break;
+          default:
+            break;
+        }
+        return annotation;
+      });
+
+      const annotations = this.getOptimizationArrow(this.visualizationData.optimization)
+      const layout = {
+        annotations: this.showAnnotationSquare ? annotations.concat(newAnnotation) : [],
+      };
+      Plotly.relayout(this.$refs.chart, layout);
+    },
+
+    // Asigna position
+    asignaPositionCuartil (better) {
+      // 1: top, 2y3: Middle, 4:Botton
+      let num_bottom_right, num_bottom_left, num_top_right, num_top_left;
+      if (better == "bottom-right") {
+        num_bottom_right = "Top"; // 1
+        num_bottom_left = "Interquartile"; // 2
+        num_top_right = "Interquartile"; // 3
+        num_top_left = "Bottom"; // 4
+      }
+      else if (better == "top-right") {
+        num_bottom_right = "Interquartile"; // 3
+        num_bottom_left = "Bottom"; // 4
+        num_top_right = "Top"; // 1
+        num_top_left = "Interquartile"; // 2
+
+      } else if (better == "top-left") {
+        num_bottom_right = "Bottom"; // 4
+        num_bottom_left = "Interquartile"; // 3
+        num_top_right = "Interquartile"; // 2
+        num_top_left = "Top"; // 1
+      }
+
+      let positions = [{ position: 'bottom-right', numCuartil: num_bottom_right },
+      { position: 'bottom-left', numCuartil: num_bottom_left },
+      { position: 'top-right', numCuartil: num_top_right },
+      { position: 'top-left', numCuartil: num_top_left },]
+
+      return positions
     },
 
 
@@ -681,13 +1071,30 @@ export default {
       } else {
         return 'Classification'
       }
-    }
+    },
+    // ICONS
+    icon() {
+      switch (this.type) {
+        case 'warning':
+          return 'warning';
+        case 'error':
+          return 'error';
+        case 'success':
+          return 'check_circle';
+        default:
+          return 'info';
+      }
+    },
 
   }
 };
 </script>
 
 <style scoped>
+
+html {
+  font-size: 18px !important;
+}
 .butns {
   position: absolute;
   top: 14px;
@@ -697,23 +1104,17 @@ export default {
 
 .menu-item:hover {
   background-color: #f0f0f0;
-  /* Change background color on hover */
   cursor: pointer;
-  /* Change cursor on hover */
 }
 
 .custom-btn-toggle .v-btn:first-child {
   border-top-left-radius: 10px;
-  /* Set rounded corner on top-left side of first button */
   border-bottom-left-radius: 10px;
-  /* Set rounded corner on bottom-left side of first button */
 }
 
 .custom-btn-toggle .v-btn:last-child {
   border-top-right-radius: 10px;
-  /* Set rounded corner on top-right side of last button */
   border-bottom-right-radius: 10px;
-  /* Set rounded corner on bottom-right side of last button */
 }
 
 .custom-table {
@@ -734,12 +1135,107 @@ color: white;
 }
 
 .custom-table .first-th {
-  border-top-left-radius: 10px; /* Adjust the radius as needed */
-  border-bottom-left-radius: 10px; /* Adjust the radius as needed */
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 
 .custom-table .last-td {
-  border-top-right-radius: 10px; /* Adjust the radius as needed */
-  border-bottom-right-radius: 10px; /* Adjust the radius as needed */
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px; 
+}
+
+/* Tools Table */
+.tools-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tools-table th{
+  background-color: #6c757d !important;
+  color: white !important;
+  text-align: left !important;
+  font-size: 16px !important;
+}
+
+.tools-table td {
+  border: 1px solid #e0e0e0;
+  padding: 10px;
+  font-size: 16px !important;
+}
+
+.tools-table .tools-th {
+  width: 60%;
+  /* border-top-left-radius: 10px; */
+}
+
+.tools-table .classify-th {
+  width: 40%;
+  /* border-top-right-radius: 10px; */
+}
+
+.toolColumn {
+  cursor: pointer;
+  position: relative;
+}
+
+.toolColumn .color-box {
+  width: 20px;
+  height: 100%;
+  display: inline-block;
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.toolColumn span {
+  display: inline-block;
+  margin-left: 25px;
+  transition: transform 0.3s ease;
+}
+
+.toolColumn:hover span {
+  transform: translateX(5px);
+  font-style: italic;
+  color: #0A58A2;
+}
+@media (max-width: 768px) {
+  .toolHeader {
+      width: 30%; /* Ajusta el ancho de la columna de herramientas */
+  }
+
+  .toolColumn span {
+      margin-left: 15px; /* Restaura el margen a su valor original */
+  }
+}
+
+.quartil-1 {
+  background-color: rgb(237, 248, 233);
+}
+
+.quartil-2 {
+  background-color: rgb(186, 228, 179);
+}
+
+.quartil-3 {
+  background-color: rgb(116, 196, 118);
+}
+
+.quartil-4 {
+  background-color: rgb(35, 139, 69);
+}
+
+.quartil-zero {
+  background-color: rgba(237, 231, 231, 0.5);
+}
+
+
+.custom-alert-icon {
+  cursor: pointer;
+}
+
+.quartile-message{
+  width: 200px;
 }
 </style>
