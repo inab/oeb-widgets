@@ -21,7 +21,7 @@
                 <v-list-item class="menu-item" @click="toggleQuartilesVisibility">
                   <v-list-item-title>Square Quartiles</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item">
+                <v-list-item class="menu-item" @click="toggleDiagonalQuartile">
                   <v-list-item-title>Diagonal Quartiles</v-list-item-title>
                 </v-list-item>
                 <v-list-item class="menu-item">
@@ -523,6 +523,17 @@ export default {
         this.optimalView()
       }
 
+      // Update Diagonal Quartiles
+      // ----------------------------------------------------------------
+      if (this.viewDiagonal === true){
+        const updatedXCoordinates = updatedVisibleTools.map((participant) => participant[0])
+        const updatedYCoordinates = updatedVisibleTools.map((participant) => participant[1])
+
+        // Update data with visible tools
+        this.getDiagonalQuartile(updatedXCoordinates, updatedYCoordinates);
+        this.optimalView()
+      }
+
       Plotly.update(this.$refs.chart, newTraces, {}, 1);
       // return true;
     },
@@ -537,6 +548,7 @@ export default {
     // NO CLASSIFICATION
     // ----------------------------------------------------------------
     noClassification(){
+      this.tableData = []
       this.viewKmeans = false;
       this.viewSquare = false;
       this.viewDiagonal = false;
@@ -570,7 +582,7 @@ export default {
         };
 
         // Update only the trace data, without changing the layout
-        Plotly.update(this.$refs.chart, newTraces, {}, 1);
+        Plotly.update(this.$refs.chart, newTraces, layout, 1);
         Plotly.restyle(this.$refs.chart, { visible: visibleArray });
       }
     },
@@ -615,7 +627,9 @@ export default {
 
         this.calculateQuartiles(this.xValues, this.yValues, this.toolID);
         this.optimalView();
-      }
+      }else{
+        console.error("The graph with id 'scatterPlot' has no data")
+      } 
     },
 
     // Calculate square quartiles
@@ -839,6 +853,254 @@ export default {
       { position: 'top-left', numCuartil: num_top_left },]
 
       return positions
+    },
+
+    // ----------------------------------------------------------------
+    // DIAGONAL QUARTILES
+    // ----------------------------------------------------------------
+    toggleDiagonalQuartile (){
+      // Classification
+      const plot = document.getElementById('scatterPlot')
+      if (plot && plot.data) {
+        const numTraces = plot.data.length;
+
+        this.viewDiagonal = true;
+        this.viewSquare = false;
+        this.viewKmeans = false;
+        // 
+        this.showShapesKmeans = false;
+        this.showShapesSquare = false;
+        this.showShapesDiagonal = true;
+
+        // Update visibility of Points
+        this.dataPoints.forEach(array => { array.hidden = false; });
+
+        // Calculate Pareto Frontier
+        const updatedVisibleTools = this.dataPoints.filter(tool => !tool.hidden);
+        const direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+        const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+        const newTraces = { x: [newParetoPoints.map(point => point[0])], y: [newParetoPoints.map(point => point[1])] };
+
+        const layout = {
+          shapes: false ? shapes : [],
+          annotations: this.getOptimizationArrow(this.visualizationData.optimization)
+        };
+
+        const visibleArray = Array(numTraces).fill(true);
+
+        Plotly.update(this.$refs.chart, newTraces, layout, 1);
+        Plotly.update(this.$refs.chart, { visible: visibleArray });
+        
+        this.getDiagonalQuartile(this.xValues, this.yValues)
+        this.optimalView()
+      }else{
+        console.error("The graph with id 'scatterPlot' has no data")
+      }  
+    },
+
+    // Diagonal Quartile
+    getDiagonalQuartile (x_values, y_values){
+
+    let tools_not_hidden = x_values.map((x, i) => [x, y_values[i]]);
+
+    let normalizedValues = this.normalizeData(x_values, y_values);
+    let [x_norm, y_norm] = [normalizedValues[0], normalizedValues[1]];
+
+    let max_x = Math.max.apply(null, x_values);
+    let max_y = Math.max.apply(null, y_values);
+    let better = this.visualizationData.optimization
+
+
+    // # compute the scores for each of the tool. based on their distance to the x and y axis
+    let scores = []
+    let scores_coords = {}; //this object will store the scores and the coordinates
+    for (let i = 0; i < x_norm.length; i++) {
+
+      if (better == "bottom-right"){
+        scores.push(x_norm[i] + (1 - y_norm[i]));
+        scores_coords[x_norm[i] + (1 - y_norm[i])] =  [x_values[i], y_values[i]];
+        //append the score to the data array
+        tools_not_hidden[i]['score'] = x_norm[i] + (1 - y_norm[i]);
+      } 
+      else if (better == "top-right"){
+        scores.push(x_norm[i] + y_norm[i]);
+        scores_coords[x_norm[i] + y_norm[i]] = [x_values[i], y_values[i]];
+        //append the score to the data array
+        tools_not_hidden[i]['score'] = x_norm[i] + y_norm[i];
+
+      }else if (better == "top-left"){
+        scores.push(1 -x_norm[i] + y_norm[i]);
+        scores_coords[(1 -x_norm[i]) + y_norm[i]] = [x_values[i], y_values[i]];
+        //append the score to the data array
+        tools_not_hidden[i]['score'] = (1 -x_norm[i]) + y_norm[i];
+      }
+    };
+
+    scores.sort(function(a, b){return b-a});
+
+    let first_quartile  = statistics.quantile(scores, 0.25);
+    let second_quartile = statistics.quantile(scores, 0.5);
+    let third_quartile  = statistics.quantile(scores, 0.75);
+
+    let coords = [  this.getDiagonalline(scores, scores_coords, first_quartile,better, max_x, max_y),
+                    this.getDiagonalline(scores, scores_coords, second_quartile,better, max_x, max_y),
+                    this.getDiagonalline(scores, scores_coords, third_quartile,better, max_x, max_y)]
+
+
+    // Create shapes
+    const shapes = [];
+    for (let i = 0; i < coords.length; i++) {
+      let [x_coords, y_coords] = [coords[i][0], coords[i][1]];
+      const shape = {
+        type: 'line',
+        x0: x_coords[0],
+        y0: y_coords[0],
+        x1: x_coords[1],
+        y1: y_coords[1],
+        line: {
+          color: '#C0D4E8',
+          width: 2,
+          dash: 'dash'
+        }
+      };
+
+      shapes.push(shape)
+    }
+
+    // Get Annotations
+    let annotationDiagonal = this.asigneQuartileDiagonal(tools_not_hidden, first_quartile, second_quartile, third_quartile)
+
+    // Diagonal Q. Table
+    this.createTableDiagonal(tools_not_hidden)
+
+
+    const layout = {
+      shapes: this.showShapesDiagonal ? shapes : [],
+      annotations: this.getOptimizationArrow(this.visualizationData.optimization).concat(annotationDiagonal),
+    };
+
+    Plotly.relayout(this.$refs.chart, layout);
+    },
+
+    // Normalize data
+    normalizeData (xValues, yValues){
+      let maxX = Math.max.apply(null, xValues);
+      let maxY = Math.max.apply(null, yValues);
+
+      let xNorm = xValues.map(function(e) {  
+        return e / maxX;
+      });
+
+      let yNorm = yValues.map(function(e) {  
+        return e / maxY;
+      });
+      return [xNorm, yNorm];
+    },
+
+    // Get coordinates for line
+    getDiagonalline (scores, scores_coords, quartile, better, max_x, max_y) {
+      let target;
+      for(let i = 0; i < scores.length; i++){
+        if(scores[i] <= quartile){
+          target = [[scores_coords[scores[i - 1]][0], scores_coords[scores[i - 1]][1]],
+                  [scores_coords[scores[i]][0], scores_coords[scores[i]][1]]];
+          break;
+        }
+      }
+
+      let half_point = [(target[0][0] + target[1][0]) /2, (target[0][1] + target[1][1]) / 2]
+
+      // # draw the line depending on which is the optimal corner
+      let x_coords;
+      let y_coords;
+      if (better == "bottom-right"){
+        x_coords = [half_point[0] - 2*max_x, half_point[0] + 2*max_x];
+        y_coords = [half_point[1] - 2*max_y, half_point[1] + 2*max_y];
+      } else if (better == "top-right"){
+        x_coords = [half_point[0] + 2*max_x, half_point[0] - 2*max_x];
+        y_coords = [half_point[1] - 2*max_y, half_point[1] + 2*max_y];   
+      } else if (better == "top-left"){
+        x_coords = [half_point[0] + 2*max_x, half_point[0] - 2*max_x];
+        y_coords = [half_point[1] + 2*max_y, half_point[1] - 2*max_y];   
+      };
+
+      return [x_coords, y_coords];
+    },
+
+    // Asigne the classification by Diagonal Quartile
+    asigneQuartileDiagonal (dataTools, first_quartile, second_quartile, third_quartile) {
+      
+      let poly = [[],[],[],[]];
+      dataTools.forEach(element => {
+          
+        if (element.score <= first_quartile) {
+          element.quartile = 4;
+          poly[0].push([element[0], element[1]]);
+        } else if (element.score <= second_quartile) {
+          element.quartile = 3;
+          poly[1].push([element[0], element[1]]);
+        } else if (element.score <= third_quartile) {
+          element.quartile = 2;
+          poly[2].push([element[0], element[1]]);
+        } else {
+          element.quartile = 1;
+          poly[3].push([element[0], element[1]]);
+        }
+      });
+
+      let i = 4;
+      let annotationDiagonal = []
+      poly.forEach((group) => {
+        let center = (this.getCentroid(group))
+        const centroidX = center[0];
+        const centroidY = center[1];
+        
+        let annotationD = {
+          xref: 'x',
+          yref: 'y',
+          x: centroidX,
+          xanchor: 'right',
+          y: centroidY,
+          yanchor: 'bottom',
+          text: i,
+          showarrow: false,
+          font: {
+            size: 30,
+            color: '#5A88B5'
+          }
+        }
+        annotationDiagonal.push(annotationD)
+        i--;
+      });
+      return annotationDiagonal
+    },
+
+    // Get centroide by annotation
+    getCentroid(coord){
+      var center = coord.reduce(function (x,y) {
+        return [x[0] + y[0]/coord.length, x[1] + y[1]/coord.length] 
+      }, [0,0])
+      return center;
+    },
+
+    // Create Table
+    createTableDiagonal(visibleTool) {
+      this.tableData = [];
+
+      this.allToolID.forEach((tool) => {
+        const toolName = tool;
+        const visibleToolInfo = visibleTool.find(item => item[0] === this.xValues[this.allToolID.indexOf(tool)]);
+
+        let quartile = 0;
+        let label = '--';
+
+        if (visibleToolInfo) {
+          quartile = visibleToolInfo.quartile;
+          label = quartile.toString();
+        }
+
+        this.tableData.push({ tool_id: toolName, cuartil: quartile, label: label });
+      });
     },
 
 
