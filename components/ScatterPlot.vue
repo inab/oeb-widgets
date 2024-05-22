@@ -43,17 +43,17 @@
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item class="menu-item">
+                <v-list-item class="menu-item" @click="downloadChart('png', datasetId)">
                   <v-list-item-title>PNG</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item">
+                <v-list-item class="menu-item" @click="downloadChart('pdf', datasetId)">
                   <v-list-item-title>PDF</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item">
+                <v-list-item class="menu-item" @click="downloadChart('svg', datasetId)">
                   <v-list-item-title>SVG</v-list-item-title>
                 </v-list-item>
                 <v-divider></v-divider>
-                <v-list-item class="menu-item">
+                <v-list-item class="menu-item" @click="downloadChart('json', datasetId)">
                   <v-list-item-title>JSON (raw data)</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -64,8 +64,8 @@
       </v-col>
     </v-row>
 
-    <v-row class="mt-4">
-      <v-col cols="8" id="chartCapture">
+    <v-row class="mt-4" id="todownload">
+      <v-col cols="8">
         <!-- CHART -->
         <div ref="chart" id="scatterPlot"></div>
         
@@ -92,7 +92,7 @@
 
       <!-- Table -->
       <v-col cols="4" >
-        <v-simple-table class="tools-table" height="850px" fixed-header v-if="tableData.length > 0" >
+        <v-simple-table class="tools-table" height="850px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
           <thead>
             <tr>
               <th class="tools-th">Participants</th>
@@ -223,7 +223,7 @@ export default {
       this.visualizationData = data.visualization
       this.optimalview = data.visualization.optimization
       // Save original data for future use
-      this.originalData = data;
+      this.originalData = this.dataJson;
 
       // Data structures for Plotly
       const traces = [];
@@ -1552,6 +1552,108 @@ export default {
         month: "long",
         day: "numeric",
       });
+    },
+
+    // DOWNLOAD
+    // ----------------------------------------------------------------
+    async downloadChart (format, datasetId) {
+
+      const chart = document.getElementById('scatterPlot');
+      chart.layout.images[0].opacity = 0.5;
+      Plotly.relayout(this.$refs.chart, chart.layout);
+
+      if (format === 'png') {
+        if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
+          const toDownloadDiv = document.getElementById('todownload');
+          const downloadCanvas = await html2canvas(toDownloadDiv, {
+            scrollX: 0,
+            scrollY: 0,
+            width: toDownloadDiv.offsetWidth,
+            height: toDownloadDiv.offsetHeight,
+          });
+            const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+
+            const link = document.createElement('a');
+            link.href = downloadImage;
+            link.download = `benchmarking_chart_${datasetId}.${format}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+          const options = { format, height: 700, width: 800 };
+          Plotly.toImage(chart, options)
+            .then((url) => {
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `benchmarking_chart_${datasetId}.${format}`;
+              link.click();
+            })
+            .catch((error) => {
+              console.error(`Error downloading graphic as ${format}`, error);
+            });
+        }
+
+      } else if (format === 'svg') {
+        const options = { format, height: 700, width: 800 };
+        Plotly.toImage(chart, options)
+          .then((url) => {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `benchmarking_chart_${datasetId}.${format}`;
+            link.click();
+          })
+          .catch((error) => {
+              console.error(`Error downloading graphic as ${format}`, error);
+          });
+
+      } else if (format === 'pdf') {
+        const pdf = new jsPDF();
+        
+        pdf.text('Benchmarking', 105, 10, null, null, 'center');
+
+        // Get chart image as base64 data URI
+        const chartImageURI = await Plotly.toImage(chart, { format: 'png' });
+        const chartHeight = 130;
+        const chartWidth = 170;
+
+        pdf.addImage(chartImageURI, 'PNG', 10, 15, chartWidth, chartHeight, null, 'FAST', 0, null, 'center');
+
+        if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
+          const table = document.getElementById('benchmarkingTable');
+          const downloadCanvas = await html2canvas(table, {
+            scrollX: 0,
+            scrollY: 0,
+            width: table.offsetWidth,
+            height: table.offsetHeight,
+          });
+          const tableImageURI = downloadCanvas.toDataURL(`image/png`);
+          const tableHeight = 140;
+          const tableWidth = 100;
+
+          // Add 20 pixels to the vertical position for the second image
+          const tableVerticalPosition = chartHeight + 10;
+          pdf.addImage(tableImageURI, 'PNG', 10, 150, tableVerticalPosition, tableHeight, tableWidth, null, 'FAST', 0, null, 'center');
+        }
+
+        // Save the PDF
+        pdf.save(`benchmarking_chart_${datasetId}.${format}`);
+
+      } else if (format === 'json') {
+        // Descargar como JSON
+        const chartData = this.originalData // Obtener datos del gráfico
+        console.log(chartData)
+        const jsonData = JSON.stringify(chartData);
+
+        const link = document.createElement('a');
+        link.href = `data:text/json;charset=utf-8,${encodeURIComponent(jsonData)}`;
+        link.download = `${datasetId}.json`;
+        link.click();
+      } else {
+        console.error('Error downloading chart:', error);
+      }
+
+      chart.layout.images[0].opacity = 0;
+      Plotly.relayout(this.$refs.chart, chart.layout);
     },
   },
   computed: {
