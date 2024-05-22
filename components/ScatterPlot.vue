@@ -163,14 +163,12 @@ export default {
   },
   data() {
     return {
-      loading: false,
       datasetId: null,
       datasetModDate: null,
-      datasetPolarity: null,
       visualizationData: null,
+      optimalview: null,
       formattedDate: null,
       originalData: null,
-      layout: null,
       markerColors: ['#D62728', '#FF7F0E', '#8C564B', '#E377C2', '#4981B6', '#BCBD22', '#9467BD', '#0C9E7B', '#7F7F7F', '#31B8BD', '#FB8072', '#62D353'],
       colorIndex: 0,
       symbols: ['circle', 'triangle-up', 'pentagon', 'cross', 'x', 'star', 'star-diamond', 'square', 'diamond-tall'],
@@ -192,7 +190,7 @@ export default {
       viewKmeans: false,
       viewSquare: false,
       viewDiagonal: false,
-      // quartileData / Table data
+      // Table data
       tableData: [],
       // Icon Table
       icon: 'info',
@@ -217,13 +215,13 @@ export default {
     // CREATE PLOT, FUNCTION PRINCIPAL
     // ----------------------------------------------------------------
     async renderChart() {
-      this.loading = true
       
       // Fetch dataset values
       const data = this.dataJson.inline_data
       this.datasetId = await this.dataJson._id
       this.datasetModDate = this.dataJson.dates.modification
       this.visualizationData = data.visualization
+      this.optimalview = data.visualization.optimization
       // Save original data for future use
       this.originalData = data;
 
@@ -242,7 +240,7 @@ export default {
       ]));
 
       // Calculate Pareto frontier
-      let direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+      let direction = this.formatOptimalDisplay(this.optimalview);
       this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
 
       const globalParetoTrace = {
@@ -317,7 +315,7 @@ export default {
       const layout = {
         autosize: true,
         height: 850,
-        annotations: this.getOptimizationArrow(this.visualizationData.optimization),
+        annotations: this.getOptimizationArrow(this.optimalview),
         xaxis: {
           title: {
             text: this.visualizationData.x_axis,
@@ -352,7 +350,7 @@ export default {
           }
         },
         // plot_bgcolor: '#F8F9F9',
-        images: this.getImagePosition(this.visualizationData.optimization),
+        images: this.getImagePosition(this.optimalview),
         showlegend: true
       };
 
@@ -495,7 +493,7 @@ export default {
 
       const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
 
-      let direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+      let direction = this.formatOptimalDisplay(this.optimalview);
       const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
 
       const newTraces = { 
@@ -548,7 +546,7 @@ export default {
           const visibleToolNames = visibleTools.map(tool => tool.name);
 
           // Recalculate Clustering
-          let better = this.visualizationData.optimization
+          let better = this.optimalview
           this.createShapeClustering(updatedVisibleTools, visibleToolNames, better, this.allToolID);
           this.showShapesKmeans = true;
 
@@ -556,7 +554,7 @@ export default {
           // Create a new layout
           const layout = {
             shapes: this.showShapesKmeans ? this.shapes : [],
-            annotations: this.getOptimizationArrow(this.visualizationData.optimization).concat(this.annotationKmeans)
+            annotations: this.getOptimizationArrow(this.optimalview).concat(this.annotationKmeans)
           };
           Plotly.update(this.$refs.chart, newTraces, layout, 1);
       }
@@ -592,7 +590,7 @@ export default {
         // Reset Pareto Frontier
         this.dataPoints.forEach(array => { array.hidden = false; });
         const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
-        let direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+        let direction = this.formatOptimalDisplay(this.optimalview);
         const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
 
         // Update the trace of the Pareto frontier
@@ -605,7 +603,7 @@ export default {
         // Modificar despues
         const layout = {
           shapes: false ? shapes : [],
-          annotations: this.getOptimizationArrow(this.visualizationData.optimization)
+          annotations: this.getOptimizationArrow(this.optimalview)
         };
 
         // Update only the trace data, without changing the layout
@@ -638,13 +636,13 @@ export default {
 
         // Calculate Pareto Frontier
         const updatedVisibleTools = this.dataPoints.filter(tool => !tool.hidden);
-        const direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+        const direction = this.formatOptimalDisplay(this.optimalview);
         const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
         const newTraces = { x: [newParetoPoints.map(point => point[0])], y: [newParetoPoints.map(point => point[1])] };
 
         const layout = {
           shapes: false ? shapes : [],
-          annotations: this.getOptimizationArrow(this.visualizationData.optimization)
+          annotations: this.getOptimizationArrow(this.optimalview)
         };
 
         const visibleArray = Array(numTraces).fill(true);
@@ -665,7 +663,7 @@ export default {
       const cuartilesX = statistics.quantile(xValues, 0.5);
       const cuartilesY = statistics.quantile(yValues, 0.5);
 
-      let better = this.visualizationData.optimization
+      let better = this.optimalview
       let allToolsWithId = this.allToolID
       this.sortToolsForSquare(better, allToolsWithId, toolID, cuartilesX, cuartilesY, xValues, yValues)
 
@@ -844,7 +842,7 @@ export default {
         return annotation;
       });
 
-      const annotations = this.getOptimizationArrow(this.visualizationData.optimization)
+      const annotations = this.getOptimizationArrow(this.optimalview)
       const layout = {
         annotations: this.showAnnotationSquare ? annotations.concat(newAnnotation) : [],
       };
@@ -904,13 +902,13 @@ export default {
 
         // Calculate Pareto Frontier
         const updatedVisibleTools = this.dataPoints.filter(tool => !tool.hidden);
-        const direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+        const direction = this.formatOptimalDisplay(this.optimalview);
         const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
         const newTraces = { x: [newParetoPoints.map(point => point[0])], y: [newParetoPoints.map(point => point[1])] };
 
         const layout = {
           shapes: false ? shapes : [],
-          annotations: this.getOptimizationArrow(this.visualizationData.optimization)
+          annotations: this.getOptimizationArrow(this.optimalview)
         };
 
         const visibleArray = Array(numTraces).fill(true);
@@ -935,8 +933,7 @@ export default {
 
     let max_x = Math.max.apply(null, x_values);
     let max_y = Math.max.apply(null, y_values);
-    let better = this.visualizationData.optimization
-
+    let better = this.optimalview
 
     // # compute the scores for each of the tool. based on their distance to the x and y axis
     let scores = []
@@ -1003,7 +1000,7 @@ export default {
 
     const layout = {
       shapes: this.showShapesDiagonal ? shapes : [],
-      annotations: this.getOptimizationArrow(this.visualizationData.optimization).concat(annotationDiagonal),
+      annotations: this.getOptimizationArrow(this.optimalview).concat(annotationDiagonal),
     };
 
     Plotly.relayout(this.$refs.chart, layout);
@@ -1153,7 +1150,7 @@ export default {
 
         // Calculate Pareto Frontier
         const updatedVisibleTools = this.dataPoints.filter(tool => !tool.hidden);
-        const direction = this.formatOptimalDisplay(this.visualizationData.optimization);
+        const direction = this.formatOptimalDisplay(this.optimalview);
         const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
         const newTraces = { x: [newParetoPoints.map(point => point[0])], y: [newParetoPoints.map(point => point[1])] };
 
@@ -1161,13 +1158,13 @@ export default {
         const visibleArray = Array(numTraces).fill(true);
         const layout = {
           shapes: false ? this.shapes : [],
-          annotations: this.getOptimizationArrow(this.visualizationData.optimization)
+          annotations: this.getOptimizationArrow(this.optimalview)
         };
         Plotly.update(this.$refs.chart, newTraces, layout, 1);
         Plotly.update(this.$refs.chart, { visible: visibleArray });
 
         // Create shape clustering
-        let better = this.visualizationData.optimization
+        let better = this.optimalview
         this.createShapeClustering(this.dataPoints, this.toolID, better, this.allToolID);
 
       }else{
@@ -1237,7 +1234,7 @@ export default {
 
       const layout = {
         shapes: this.showShapesKmeans ? this.shapes : [],
-        annotations: this.getOptimizationArrow(this.visualizationData.optimization).concat(this.annotationKmeans),
+        annotations: this.getOptimizationArrow(this.optimalview).concat(this.annotationKmeans),
       };
       Plotly.update(this.$refs.chart, {}, layout);
 
