@@ -10,7 +10,7 @@
             <!-- Dropdown for Clas -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification">
                   {{classificationButtonText}}
                 </v-btn>
               </template>
@@ -31,14 +31,14 @@
             </v-menu>
 
             <!-- Reset View / Optimal view -->
-            <v-btn @click="toggleView" outlined>
+            <v-btn @click="toggleView" outlined class="button-resetView">
               {{ viewButtonText }}
             </v-btn>
 
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-download">
                   Download
                 </v-btn>
               </template>
@@ -1700,9 +1700,25 @@ html {
   position: absolute;
   top: 14px;
   margin-top: 10px;
-  z-index: 1
+  z-index: 1;
 }
 
+.button-classification{
+  width: 210px;
+  font-size: 16px !important;
+  /* text-transform: capitalize; */
+}
+.button-resetView {
+  width: 140px;
+  font-size: 16px !important;
+  /* text-transform: capitalize; */
+}
+
+.button-download {
+  width: 168px;
+  font-size: 16px !important;
+  /* text-transform: capitalize; */
+}
 .menu-item:hover {
   background-color: #f0f0f0;
   cursor: pointer;
@@ -1724,15 +1740,16 @@ html {
 }
 
 .custom-table th{
-background-color: lightgray;
+background-color: #6c757d;
 color: white;
-
+font-size: 16px !important;
 }
 
 .custom-table td {
   border: 1px solid #e0e0e0;
   padding: 10px;
   text-align: center;
+  font-size: 16px !important;
 }
 
 .custom-table .first-th {
