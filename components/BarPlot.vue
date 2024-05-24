@@ -1,21 +1,21 @@
 <template>
-  <v-container>
+  <v-container fluid>
     <v-row>
       <v-col cols="8">
         <div class="butns">
           <!-- Buttons -->
 
           <v-btn-toggle class="custom-btn-toggle">
-            <v-btn outlined>
+            <v-btn outlined class="button-classification">
               Sort & Classify Data
             </v-btn outlined>
-            <v-btn>
+            <v-btn class="button-resetView">
               Optimal View
             </v-btn>
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-download">
                   Download
                 </v-btn>
               </template>
@@ -241,25 +241,36 @@ export default {
   z-index: 1
 }
 
+.button-classification{
+  width: 210px;
+  font-size: 16px !important;
+  /* text-transform: capitalize; */
+}
+.button-resetView {
+  width: 140px;
+  font-size: 16px !important;
+  /* text-transform: capitalize; */
+}
+
+.button-download {
+  width: 168px;
+  font-size: 16px !important;
+  /* text-transform: capitalize; */
+}
+
 .menu-item:hover {
   background-color: #f0f0f0;
-  /* Change background color on hover */
   cursor: pointer;
-  /* Change cursor on hover */
 }
 
 .custom-btn-toggle .v-btn:first-child {
   border-top-left-radius: 10px;
-  /* Set rounded corner on top-left side of first button */
   border-bottom-left-radius: 10px;
-  /* Set rounded corner on bottom-left side of first button */
 }
 
 .custom-btn-toggle .v-btn:last-child {
   border-top-right-radius: 10px;
-  /* Set rounded corner on top-right side of last button */
   border-bottom-right-radius: 10px;
-  /* Set rounded corner on bottom-right side of last button */
 }
 
 .custom-table {
@@ -268,8 +279,9 @@ export default {
 }
 
 .custom-table th{
-background-color: lightgray;
+background-color: #6c757d;
 color: white;
+font-size: 16px !important;
 
 }
 
@@ -277,6 +289,7 @@ color: white;
   border: 1px solid #e0e0e0;
   padding: 10px;
   text-align: center;
+  font-size: 16px !important;
 }
 
 .custom-table .first-th {
