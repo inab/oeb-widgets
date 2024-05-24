@@ -141,7 +141,7 @@
 // IMPORTS
 import Plotly from 'plotly.js-dist';
 import * as statistics from 'simple-statistics';
-import CustomAlert from '~/components/CustomAlert.vue';
+import CustomAlert from './CustomAlert.vue';
 // REQUIREMENTS
 var clusterMaker = require('clusters');
 const pf = require('pareto-frontier');
