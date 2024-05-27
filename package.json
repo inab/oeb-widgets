@@ -1,18 +1,13 @@
 {
-  "name": "oeb-charts-test",
+  "name": "oeb-widgets",
   "version": "1.0.6",
-  "main": "dist/index.js",
+  "private": true,
   "scripts": {
-    "build": "webpack"
+    "dev": "nuxt",
+    "build": "nuxt build",
+    "start": "nuxt start",
+    "generate": "nuxt generate"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/inab/oeb-test-package-widgets/tree/oeb-test-npm-package"
-  },
-  "keywords": [
-    "nuxt",
-    "OEB"
-  ],
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.36",
     "clusters": "^0.0.4",
@@ -29,9 +24,6 @@
     "vuetify": "^2.6.6"
   },
   "devDependencies": {
-    "@nuxtjs/vuetify": "^1.12.3",
-    "vue-loader": "^15.10.0",
-    "webpack": "^5.59.1",
-    "webpack-cli": "^5.1.4"
+    "@nuxtjs/vuetify": "^1.12.3"
   }
 }
