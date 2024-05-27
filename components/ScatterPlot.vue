@@ -10,7 +10,7 @@
             <!-- Dropdown for Clas -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification">
+                <v-btn density="compact" size="x-small" outlined v-bind="attrs" v-on="on" class="button-classification">
                   {{classificationButtonText}}
                 </v-btn>
               </template>
@@ -31,14 +31,14 @@
             </v-menu>
 
             <!-- Reset View / Optimal view -->
-            <v-btn @click="toggleView" outlined class="button-resetView">
+            <v-btn density="compact" @click="toggleView" outlined class="button-resetView">
               {{ viewButtonText }}
             </v-btn>
 
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-download">
+                <v-btn density="compact" outlined v-bind="attrs" v-on="on" class="button-download">
                   Download
                 </v-btn>
               </template>
@@ -64,7 +64,7 @@
       </v-col>
     </v-row>
 
-    <v-row class="mt-4" id="todownload">
+    <v-row id="todownload">
       <v-col cols="8">
         <!-- CHART -->
         <div ref="chart" id="scatterPlot"></div>
@@ -78,7 +78,8 @@
         />
 
         <!-- ID AND DATE TABLE -->
-        <v-simple-table class="custom-table">
+        <div class="info-table">
+          <v-simple-table class="custom-table">
           <tbody>
                 <tr>
                   <th class="first-th">Dataset ID</th>
@@ -88,11 +89,13 @@
                 </tr>
               </tbody>
         </v-simple-table>
+        </div>
+        
       </v-col>
 
       <!-- Table -->
       <v-col cols="4" >
-        <v-simple-table class="tools-table" height="850px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
+        <v-simple-table class="tools-table" height="800px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
           <thead>
             <tr>
               <th class="tools-th">Participants</th>
@@ -314,7 +317,7 @@ export default {
       // Create the chart layout
       const layout = {
         autosize: true,
-        height: 850,
+        height: 750,
         annotations: this.getOptimizationArrow(this.optimalview),
         xaxis: {
           title: {
@@ -338,7 +341,7 @@ export default {
             },
           },
         },
-        margin: { l: 60, r: 50, t: 80, b: 20, pad: 4 },
+        margin: { l: 60, r: 10, t: 0, b: 10, pad: 4 },
         legend: {
           orientation: 'h',
           x: 0,
@@ -405,17 +408,12 @@ export default {
     // ----------------------------------------------------------------
     // Function to format the optimal display direction
     formatOptimalDisplay(optimization) {
-      switch (optimization) {
-        case 'top-left':
-          return ['min', 'max'];
-        case 'top-right':
-          return ['max', 'max'];
-        case 'bottom-left':
-          return ['min', 'min'];
-        case 'bottom-right':
-          return ['max', 'min'];
-        default:
-          return ['min', 'min'];
+      if (optimization == 'top-right') {
+        return 'topRight';
+      } else if (optimization == optimization == 'top-left') {
+        return 'topLeft';
+      } else if (optimization == 'bottom-right') {
+        return 'bottomRight';
       }
     },
 
@@ -560,7 +558,6 @@ export default {
       }
 
       Plotly.update(this.$refs.chart, newTraces, {}, 1);
-      // return true;
     },
 
     
@@ -768,7 +765,7 @@ export default {
     annotationSquareQuartile (better){
       // Create Annotation
       let position = this.asignaPositionCuartil(better)
-      // Add label to the position (T, M, B)
+      // Add label to the position (Top, Interquartile, Botton)
       const newAnnotation = position.map(({ position, numCuartil }) => {
         let annotation = {};
         switch (position) {
@@ -792,7 +789,7 @@ export default {
             annotation = {
               xref: 'paper',
               yref: 'paper',
-              x: 0.91,
+              x: 0.90,
               xanchor: 'left',
               y: 0.05,
               yanchor: 'bottom',
@@ -1693,34 +1690,29 @@ export default {
 
 <style scoped>
 
-html {
-  font-size: 18px !important;
-}
 .butns {
-  position: absolute;
-  top: 14px;
-  margin-top: 10px;
-  z-index: 1;
+  margin-bottom: 25px;
+  /* font-family: 'Roboto', sans-serif; */
 }
 
 .button-classification{
   width: 210px;
   font-size: 16px !important;
-  /* text-transform: capitalize; */
+  text-transform: capitalize;
 }
 .button-resetView {
   width: 140px;
   font-size: 16px !important;
-  /* text-transform: capitalize; */
+  text-transform: capitalize;
 }
 
 .button-download {
   width: 168px;
   font-size: 16px !important;
-  /* text-transform: capitalize; */
+  text-transform: capitalize;
 }
 .menu-item:hover {
-  background-color: #f0f0f0;
+  background-color: #6c757d;
   cursor: pointer;
 }
 
@@ -1732,6 +1724,10 @@ html {
 .custom-btn-toggle .v-btn:last-child {
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
+}
+
+.info-table{
+  margin-right: 15px;
 }
 
 .custom-table {
