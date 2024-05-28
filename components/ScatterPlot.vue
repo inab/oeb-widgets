@@ -196,7 +196,6 @@ export default {
       // Table data
       tableData: [],
       // Icon Table
-      icon: 'info',
       // Square Quartiles
       showShapesSquare: false,
       showAnnotationSquare: false,
