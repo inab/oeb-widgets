@@ -196,7 +196,6 @@ export default {
       // Table data
       tableData: [],
       // Icon Table
-      icon: 'info',
       // Square Quartiles
       showShapesSquare: false,
       showAnnotationSquare: false,
@@ -245,6 +244,14 @@ export default {
       // Calculate Pareto frontier
       let direction = this.formatOptimalDisplay(this.optimalview);
       this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
+
+      // If the pareto returns only one point, we create two extra points to represent it.
+      if (this.paretoPoints.length == 1){
+        const extraPoint = [this.paretoPoints[0][0],0];
+        const extraPoint2 = [Math.max(...this.xValues),this.paretoPoints[0][1]];
+        this.paretoPoints.unshift(extraPoint);
+        this.paretoPoints.push(extraPoint2);
+      }
 
       const globalParetoTrace = {
         x: this.paretoPoints.map((point) => point[0]),
@@ -408,13 +415,17 @@ export default {
     // ----------------------------------------------------------------
     // Function to format the optimal display direction
     formatOptimalDisplay(optimization) {
+      let direction = null;
       if (optimization == 'top-right') {
-        return 'topRight';
-      } else if (optimization == optimization == 'top-left') {
-        return 'topLeft';
+        direction = 'topRight';
+      } else if (optimization == 'top-left') {
+        direction = 'topLeft';
       } else if (optimization == 'bottom-right') {
-        return 'bottomRight';
+        direction = 'bottomRight';
+      }else if (optimization == 'bottom-left') {
+        direction = 'bottomLeft';
       }
+      return direction
     },
 
     // ACTIONS FOR TABLE
@@ -431,6 +442,10 @@ export default {
       const scatterPlotElement = document.getElementById('scatterPlot');
       const plotlyData = scatterPlotElement.data;
       const plotlyLayout = scatterPlotElement.layout;
+
+      if (plotlyData.length <= 5){
+        return;
+      }
 
       // Check the visibility state of the trace
       let isVisible = plotlyData[traceIndex].visible;
@@ -989,7 +1004,7 @@ export default {
     }
 
     // Get Annotations
-    let annotationDiagonal = this.asigneQuartileDiagonal(tools_not_hidden, first_quartile, second_quartile, third_quartile)
+    let annotationDiagonal = this.asigneQuartileDiagonal(tools_not_hidden, first_quartile, second_quartile, third_quartile,better)
 
     // Diagonal Q. Table
     this.createTableDiagonal(tools_not_hidden)
@@ -1023,6 +1038,9 @@ export default {
       let target;
       for(let i = 0; i < scores.length; i++){
         if(scores[i] <= quartile){
+          // When la longitud de las tools es menor de la esperada se ejecuta este condicional.
+          if (i == 0){i = 1}
+          
           target = [[scores_coords[scores[i - 1]][0], scores_coords[scores[i - 1]][1]],
                   [scores_coords[scores[i]][0], scores_coords[scores[i]][1]]];
           break;
@@ -1049,24 +1067,43 @@ export default {
     },
 
     // Asigne the classification by Diagonal Quartile
-    asigneQuartileDiagonal (dataTools, first_quartile, second_quartile, third_quartile) {
+    asigneQuartileDiagonal (dataTools, first_quartile, second_quartile, third_quartile, better) {
       
       let poly = [[],[],[],[]];
       dataTools.forEach(element => {
-          
-        if (element.score <= first_quartile) {
-          element.quartile = 4;
-          poly[0].push([element[0], element[1]]);
-        } else if (element.score <= second_quartile) {
-          element.quartile = 3;
-          poly[1].push([element[0], element[1]]);
-        } else if (element.score <= third_quartile) {
-          element.quartile = 2;
-          poly[2].push([element[0], element[1]]);
-        } else {
-          element.quartile = 1;
-          poly[3].push([element[0], element[1]]);
+        if (better == 'top-left'){
+          if (element.score <= first_quartile) {
+            element.quartile = 4;
+            poly[0].push([element[0], element[1]]);
+          } else if (element.score <= second_quartile) {
+            element.quartile = 3;
+            poly[1].push([element[0], element[1]]);
+          } else if (element.score <= third_quartile) {
+            element.quartile = 2;
+            poly[3].push([element[0], element[1]]);
+          } else {
+            element.quartile = 1;
+            poly[2].push([element[0], element[1]]);
+          }
+
+        }else{
+          if (element.score <= first_quartile) {
+            element.quartile = 4;
+            poly[0].push([element[0], element[1]]);
+          } else if (element.score <= second_quartile) {
+            element.quartile = 3;
+            poly[1].push([element[0], element[1]]);
+          } else if (element.score <= third_quartile) {
+            element.quartile = 2;
+            poly[2].push([element[0], element[1]]);
+          } else {
+            element.quartile = 1;
+            poly[3].push([element[0], element[1]]);
+          }
         }
+          
+        
+
       });
 
       let i = 4;
@@ -1090,6 +1127,7 @@ export default {
             color: '#5A88B5'
           }
         }
+        
         annotationDiagonal.push(annotationD)
         i--;
       });
