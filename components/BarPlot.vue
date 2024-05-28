@@ -6,16 +6,18 @@
           <!-- Buttons -->
 
           <v-btn-toggle class="custom-btn-toggle">
-            <v-btn outlined class="button-classification">
+            <v-btn outlined class="button-classification custom-height-button">
               Sort & Classify Data
             </v-btn outlined>
-            <v-btn class="button-resetView">
+            <v-btn @click="optimalView" class="button-resetView custom-height-button" v-if="optimal === 'no'"
+              :disabled="loading">
               Optimal View
             </v-btn>
+            <v-btn  class="button-resetView custom-height-button" v-else :disabled="loading" @click="optimalView">Reset view</v-btn>
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-download">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-download custom-height-button">
                   Download
                 </v-btn>
               </template>
@@ -46,13 +48,13 @@
         <!-- ID AND DATE TABLE -->
         <v-simple-table class="custom-table">
           <tbody>
-                <tr>
-                  <th class="first-th">Dataset ID</th>
-                  <td>{{ datasetId }}</td>
-                  <th>Last Update</th>
-                  <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
-                </tr>
-              </tbody>
+            <tr>
+              <th class="first-th">Dataset ID</th>
+              <td>{{ datasetId }}</td>
+              <th>Last Update</th>
+              <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
+            </tr>
+          </tbody>
         </v-simple-table>
       </v-col>
 
@@ -79,13 +81,20 @@ export default {
       datasetPolarity: null,
       formattedDate: null,
       originalData: null,
-      layout: null
+      layout: null,
+      sortOrder: 'raw',
+      optimal: 'no',
+      showAdditionalTable: false
     };
   },
   mounted() {
     this.renderChart();
   },
   methods: {
+
+    // ----------------------------------------------------------------
+    // MAKE CHART
+    // ----------------------------------------------------------------
     async renderChart() {
       this.loading = true
       // Fetch dataset values
@@ -216,6 +225,7 @@ export default {
         }
       });
     },
+    // ----------------------------------------------------------------
     // FORMAT DATE
     // ----------------------------------------------------------------
     formatDateString(dateString) {
@@ -225,9 +235,172 @@ export default {
         month: "long",
         day: "numeric",
       });
-    }
+    },
+    // ----------------------------------------------------------------
+    // ANIMATIONS
+    // ----------------------------------------------------------------
+    animateBars(data) {
+      const x = data.map(entry => entry.tool_id);
+      const y = data.map(() => 0); // Start with all bars at 0
 
+      const update = {
+        x: [x],
+        y: [y],
+      };
+
+      Plotly.update(this.$refs.chart, update);
+
+      const actualTrace = {
+        y: data.map(entry => entry.metric_value),
+      };
+
+      // Animate the transition from 0 to actual values
+      Plotly.animate(this.$refs.chart, {
+        data: [actualTrace],
+        traces: [0],
+        transition: {
+          duration: 1000,
+          easing: 'ease-in-out',
+        },
+      });
+    },
+
+    animateLine(shapeIndex) {
+      const layout = document.getElementById('barPlot').layout;
+      const shape = layout.shapes[shapeIndex];
+      const yTarget = 1; // End at the top
+
+      let y = 0; // Start from the bottom
+
+      const animateStep = () => {
+        if (y <= yTarget) {
+          // Update the y-coordinate of the line shape
+          shape.y1 = y;
+
+          // Update the layout with the modified shape
+          Plotly.relayout(this.$refs.chart, { shapes: layout.shapes });
+
+          // Increment y and trigger the next animation step
+          y += 0.03; // Adjust the speed as needed
+          requestAnimationFrame(animateStep);
+        }
+      };
+
+      // Start the animation
+      animateStep();
+    },
+
+    // ----------------------------------------------------------------
+    // BUTTONS
+    // ----------------------------------------------------------------
+
+    // Optimal view
+    // ----------------------------------------------------------------
+    optimalView() {
+      try {
+        if (this.optimal === 'no') {
+
+          // Fetch current data and calculate metric range
+          let data;
+          if (this.sortOrder !== 'raw') {
+            // If data has been sorted, use the sorted data
+            data = this.originalData.challenge_participants.slice().sort((a, b) => b.metric_value - a.metric_value);
+          } else {
+            // Otherwise, use the original data
+            data = this.originalData.challenge_participants;
+          }
+
+          const metricValues = data.map(entry => entry.metric_value);
+          const minMetric = Math.min(...metricValues);
+          const maxMetric = Math.max(...metricValues);
+
+          // Calculate range between min and max metrics
+          const metricRange = maxMetric - minMetric;
+
+          // Calculate new y-axis range with a slight buffer based on metric range
+          const minY = Math.max(0, minMetric - metricRange * 0.2);
+          const maxY = maxMetric + metricRange * 0.08;
+
+          // Update plot layout with new y-axis range
+          Plotly.relayout(this.$refs.chart, { 'yaxis.range': [minY, maxY] });
+
+          // Animate the bars
+          this.animateBars(data);
+
+          // Update optimal value to indicate optimal view is active
+          this.optimal = 'yes';
+        } else {
+
+          let data;
+          if (this.sortOrder !== 'raw') {
+            // If data has been sorted, use the sorted data
+            data = this.originalData.challenge_participants.slice().sort((a, b) => b.metric_value - a.metric_value);
+          } else {
+            // Otherwise, use the original data
+            data = this.originalData.challenge_participants;
+          }
+          // Return to original data view by restoring the original y-axis range
+          const originalLayout = {
+            'yaxis.range': [0, Math.max(...data.map(entry => entry.metric_value)) + 0.1]
+          };
+
+          // Update plot layout with original y-axis range
+          Plotly.relayout(this.$refs.chart, originalLayout);
+
+          // Animate the bars after adjusting the y-axis range
+          this.animateBars(data);
+
+          // Update optimal value to indicate original view is active
+          this.optimal = 'no';
+        }
+      } catch (error) {
+        console.error('Error in optimalView:', error);
+      }
+    }
+  },
+
+  // Sort and order view
+  // ----------------------------------------------------------------
+  toggleSortOrder() {
+    try {
+      if (this.sortOrder === 'raw') {
+        this.showAdditionalTable = !this.showAdditionalTable;
+        // Sort logic (descending order)
+        const sortedData = this.originalData.challenge_participants.slice().sort((a, b) => b.metric_value - a.metric_value);
+
+        this.updateChart(sortedData);
+        // Call the animateBars function after updating the chart
+        this.animateBars(sortedData);
+        // Calculate quartiles and update the table data
+        this.quartileData = this.calculateQuartiles(sortedData);
+
+        // Add lines between quartile groups
+        this.addLinesBetweenQuartiles();
+
+        // Add quartile labels
+        this.addQuartileLabels();
+
+      } else {
+        // Return to raw data
+        this.updateChart(this.originalData.challenge_participants);
+        // Call the animateBars function after updating the chart
+        this.animateBars(this.originalData.challenge_participants);
+        this.quartileData = {};
+
+        // Remove lines between quartile groups
+        this.removeLinesBetweenQuartiles();
+
+        // Clear quartile labels
+        this.clearQuartileLabels();
+      }
+
+      // Toggle sortOrder
+      this.sortOrder = this.sortOrder === 'raw' ? 'sorted' : 'raw';
+    } catch (error) {
+      console.error('Error in toggleSortOrder:', error);
+    }
   }
+
 
 };
 
@@ -235,27 +408,31 @@ export default {
 
 <style scoped>
 .butns {
-  position: absolute;
-  top: 14px;
-  margin-top: 10px;
-  z-index: 1
+  margin-bottom: 1.5rem;
 }
 
-.button-classification{
+.custom-height-button {
+  height: 40px !important;
+  min-height: 30px !important;
+  line-height: 40px !important;
+}
+
+.button-classification {
   width: 210px;
   font-size: 16px !important;
-  /* text-transform: capitalize; */
+  text-transform: capitalize;
 }
+
 .button-resetView {
   width: 140px;
   font-size: 16px !important;
-  /* text-transform: capitalize; */
+  text-transform: capitalize;
 }
 
 .button-download {
   width: 168px;
   font-size: 16px !important;
-  /* text-transform: capitalize; */
+  text-transform: capitalize;
 }
 
 .menu-item:hover {
@@ -278,10 +455,10 @@ export default {
   border-collapse: collapse;
 }
 
-.custom-table th{
-background-color: #6c757d;
-color: white;
-font-size: 16px !important;
+.custom-table th {
+  background-color: #6c757d;
+  color: white;
+  font-size: 16px !important;
 
 }
 
@@ -293,12 +470,16 @@ font-size: 16px !important;
 }
 
 .custom-table .first-th {
-  border-top-left-radius: 10px; /* Adjust the radius as needed */
-  border-bottom-left-radius: 10px; /* Adjust the radius as needed */
+  border-top-left-radius: 10px;
+  /* Adjust the radius as needed */
+  border-bottom-left-radius: 10px;
+  /* Adjust the radius as needed */
 }
 
 .custom-table .last-td {
-  border-top-right-radius: 10px; /* Adjust the radius as needed */
-  border-bottom-right-radius: 10px; /* Adjust the radius as needed */
+  border-top-right-radius: 10px;
+  /* Adjust the radius as needed */
+  border-bottom-right-radius: 10px;
+  /* Adjust the radius as needed */
 }
 </style>
