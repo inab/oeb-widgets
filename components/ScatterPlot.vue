@@ -443,6 +443,10 @@ export default {
       const plotlyData = scatterPlotElement.data;
       const plotlyLayout = scatterPlotElement.layout;
 
+      if (plotlyData.length <= 5){
+        return;
+      }
+
       // Check the visibility state of the trace
       let isVisible = plotlyData[traceIndex].visible;
       if (isVisible === undefined) {
