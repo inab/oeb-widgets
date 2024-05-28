@@ -245,6 +245,15 @@ export default {
       // Calculate Pareto frontier
       let direction = this.formatOptimalDisplay(this.optimalview);
       this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
+      console.log(this.paretoPoints)
+
+      // If the pareto returns only one point, we create two extra points to represent it.
+      if (this.paretoPoints.length == 1){
+        const extraPoint = [this.paretoPoints[0][0],0];
+        const extraPoint2 = [Math.max(...this.xValues),this.paretoPoints[0][1]];
+        this.paretoPoints.unshift(extraPoint);
+        this.paretoPoints.push(extraPoint2);
+      }
 
       const globalParetoTrace = {
         x: this.paretoPoints.map((point) => point[0]),
@@ -408,13 +417,17 @@ export default {
     // ----------------------------------------------------------------
     // Function to format the optimal display direction
     formatOptimalDisplay(optimization) {
+      let direction = null;
       if (optimization == 'top-right') {
-        return 'topRight';
-      } else if (optimization == optimization == 'top-left') {
-        return 'topLeft';
+        direction = 'topRight';
+      } else if (optimization == 'top-left') {
+        direction = 'topLeft';
       } else if (optimization == 'bottom-right') {
-        return 'bottomRight';
+        direction = 'bottomRight';
+      }else if (optimization == 'bottom-left') {
+        direction = 'bottomLeft';
       }
+      return direction
     },
 
     // ACTIONS FOR TABLE
