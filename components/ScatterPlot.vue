@@ -10,7 +10,7 @@
             <!-- Dropdown for Clas -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn density="compact" size="x-small" outlined v-bind="attrs" v-on="on" class="button-classification">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button">
                   {{classificationButtonText}}
                 </v-btn>
               </template>
@@ -31,14 +31,14 @@
             </v-menu>
 
             <!-- Reset View / Optimal view -->
-            <v-btn density="compact" @click="toggleView" outlined class="button-resetView">
+            <v-btn @click="toggleView" outlined class="button-resetView custom-height-button">
               {{ viewButtonText }}
             </v-btn>
 
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn density="compact" outlined v-bind="attrs" v-on="on" class="button-download">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-download custom-height-button">
                   Download
                 </v-btn>
               </template>
@@ -324,7 +324,7 @@ export default {
             text: this.visualizationData.x_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 18,
+              size: 16,
               color: 'black',
               weight: 'bold',
             },
@@ -335,7 +335,7 @@ export default {
             text: this.visualizationData.y_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 18,
+              size: 16,
               color: 'black',
               weight: 'bold',
             },
@@ -1691,8 +1691,13 @@ export default {
 <style scoped>
 
 .butns {
-  margin-bottom: 25px;
+  margin-bottom: 1.5rem;
   /* font-family: 'Roboto', sans-serif; */
+}
+.custom-height-button {
+  height: 40px !important;
+  min-height: 30px !important;
+  line-height: 40px !important;
 }
 
 .button-classification{
@@ -1715,6 +1720,87 @@ export default {
   background-color: #6c757d;
   cursor: pointer;
 }
+@media (max-width: 1200px) {
+  .button-classification {
+    width: 180px;
+    font-size: 14px !important;
+  }
+
+  .button-resetView {
+    width: 120px;
+    font-size: 14px !important;
+  }
+
+  .button-download {
+    width: 140px;
+    font-size: 14px !important;
+  }
+
+  .custom-height-button {
+    height: 35px !important;
+    line-height: 35px !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .button-classification {
+    width: 150px;
+    font-size: 12px !important;
+  }
+
+  .button-resetView {
+    width: 100px;
+    font-size: 12px !important;
+  }
+
+  .button-download {
+    width: 120px;
+    font-size: 12px !important;
+  }
+
+  .custom-height-button {
+    height: 30px !important;
+    line-height: 30px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .button-classification {
+    width: 120px;
+    font-size: 10px !important;
+  }
+
+  .button-resetView {
+    width: 80px;
+    font-size: 10px !important;
+  }
+
+  .button-download {
+    width: 100px;
+    font-size: 10px !important;
+  }
+
+  .custom-height-button {
+    height: 25px !important;
+    line-height: 25px !important;
+  }
+}
+
+@media (max-width: 300px) {
+  .button-classification,
+  .button-resetView,
+  .button-download {
+    width: 100%;
+    font-size: 8px !important;
+  }
+
+  .custom-height-button {
+    height: 20px !important;
+    line-height: 20px !important;
+  }
+}
+
+/* Info table */
 
 .custom-btn-toggle .v-btn:first-child {
   border-top-left-radius: 10px;
@@ -1728,8 +1814,11 @@ export default {
 
 .info-table{
   margin-right: 15px;
+  margin-top: 1rem;
+
 }
 
+/* Table data */
 .custom-table {
   width: 100%;
   border-collapse: collapse;
