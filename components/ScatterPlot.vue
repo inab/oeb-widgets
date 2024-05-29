@@ -1733,14 +1733,20 @@ export default {
   /* font-family: 'Roboto', sans-serif; */
 }
 .custom-height-button {
-  height: 40px !important;
-  min-height: 30px !important;
-  line-height: 40px !important;
+  color: black;
+  height: 45px !important;
+  min-height: 40px !important;
+  line-height: 45px !important;
+}
+
+.theme--light.v-btn-toggle:not(.v-btn-toggle--group) .v-btn.v-btn {
+  border-color: #6C757D !important;
+  border-width: 2px !important;
 }
 
 .button-classification{
   width: 210px;
-  font-size: 16px !important;
+  font-size: 17px !important;
   text-transform: capitalize;
 }
 .button-resetView {
@@ -1974,6 +1980,8 @@ font-size: 16px !important;
 
 .custom-alert-icon {
   cursor: pointer;
+  float: right;
+
 }
 
 .quartile-message{
