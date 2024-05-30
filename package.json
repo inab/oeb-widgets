@@ -1,13 +1,13 @@
 {
-  "name": "oeb-charts-test",
-  "version": "1.0.6",
+  "name": "@inb/oeb-widgets",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
     "build": "webpack"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/inab/oeb-test-package-widgets/tree/oeb-test-npm-package"
+    "url": "git+https://github.com/inab/oeb-widgets/tree/oeb-test-npm-package"
   },
   "keywords": [
     "nuxt",
