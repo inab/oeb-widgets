@@ -7,7 +7,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/inab/oeb-widgets/tree/oeb-test-npm-package"
+    "url": "git+https://github.com/inab/oeb-widgets/tree/oeb-charts-package"
   },
   "keywords": [
     "nuxt",
