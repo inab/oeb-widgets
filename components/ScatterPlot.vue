@@ -78,7 +78,7 @@
         />
 
         <!-- ID AND DATE TABLE -->
-        <div class="info-table">
+        <div class="info-table" v-if="datasetModDate">
           <v-simple-table class="custom-table">
           <tbody>
                 <tr>
@@ -95,7 +95,7 @@
 
       <!-- Table -->
       <v-col cols="4" >
-        <v-simple-table class="tools-table" height="800px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
+        <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
           <thead>
             <tr>
               <th class="tools-th">Participants</th>
