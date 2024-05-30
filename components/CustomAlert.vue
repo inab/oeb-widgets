@@ -84,16 +84,18 @@
 .custom-alert {
   display: flex;
   align-items: center;
-  padding: 20px;
+  padding: 10px;
   background-color: #FDEFE4; /* Color de advertencia */
   color: #F37C21; /* Color del texto */
   border-radius: 5px;
   position: relative;
-  margin: 20px 0;
+  margin: 10px;
 }
 
 .custom-alert-icon-container {
-  margin-right: 15px; /* Espacio entre el icono y el texto */
+  margin-left: 10px; /* Espacio entre el icono y el texto */
+  margin-right: 10px; /* Espacio entre el icono y el texto */
+
 }
 
 .custom-alert-content {
@@ -102,12 +104,13 @@
 
 .custom-alert-title {
   font-weight: bold;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
 .custom-alert button {
   background: none;
   border: none;
+  margin-right: 15px;
   font-size: 25px;
   cursor: pointer;
 }
