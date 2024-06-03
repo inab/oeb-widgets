@@ -94,7 +94,7 @@
       </v-col>
 
       <!-- Table -->
-      <v-col cols="4" >
+      <v-col cols="4" class="content-table">
         <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
           <thead>
             <tr>
@@ -1911,7 +1911,6 @@ export default {
 .info-table{
   margin-right: 15px;
   margin-top: 1rem;
-
 }
 
 /* Table data */
@@ -1943,9 +1942,20 @@ font-size: 16px !important;
   border-bottom-right-radius: 10px; 
 }
 
+/* Remove hover effect */
+.custom-table tr:hover {
+  background-color: inherit !important;
+}
+
+
 /* Tools Table */
+.content-table{
+  display: flex;
+  justify-content: center;
+}
+
 .tools-table {
-  width: 100%;
+  width: 90%;
   border-collapse: collapse;
 }
 
@@ -1963,12 +1973,12 @@ font-size: 16px !important;
 }
 
 .tools-table .tools-th {
-  width: 60%;
+  width: 55%;
   /* border-top-left-radius: 10px; */
 }
 
 .tools-table .classify-th {
-  width: 40%;
+  width: 45%;
   /* border-top-right-radius: 10px; */
 }
 
