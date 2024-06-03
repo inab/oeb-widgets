@@ -7,10 +7,10 @@
           <!-- BUTTONS -->
           <v-btn-toggle class="custom-btn-toggle">
 
-            <!-- Dropdown for Clas -->
+            <!-- Dropdown for Classification -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button" :disabled="loading">
                   {{classificationButtonText}}
                 </v-btn>
               </template>
@@ -94,7 +94,7 @@
       </v-col>
 
       <!-- Table -->
-      <v-col cols="4" >
+      <v-col cols="4" class="content-table">
         <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
           <thead>
             <tr>
@@ -114,7 +114,7 @@
                   <div class="quartile-message">
                     <p><b>The Square quartile label</b></p>
                     <p>Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
-                  denotes quartiles above average and 'Bottom (B)' those below, offering clarity in rankin</p></div>
+                  denotes quartiles above average and 'Bottom (B)' those below, offering clarity in rankin.</p></div>
                 </v-tooltip>
               </th>
             </tr>
@@ -166,6 +166,7 @@ export default {
   },
   data() {
     return {
+      loading: false,
       datasetId: null,
       datasetModDate: null,
       visualizationData: null,
@@ -243,7 +244,10 @@ export default {
       ]));
 
       // Calculate Pareto frontier
-      if (this.optimalview){
+      if (this.optimalview != null){
+        // Activate classification button
+        this.loading = false
+        
         let direction = this.formatOptimalDisplay(this.optimalview);
         this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
 
@@ -284,6 +288,9 @@ export default {
         // Add the pareto trace to the trace array
         traces.push(globalParetoTrace, dynamicParetoTrace);
       }else{
+        // Disable classification button
+        this.loading = true;
+
         const globalParetoTrace = {
           x: ['0'],
           y: ['0'],
@@ -404,6 +411,7 @@ export default {
       const scatterPlot = Plotly.newPlot(this.$refs.chart, traces, layout, config);
       // ----------------------------------------------------------------
 
+
       // Get rangees from ejest graph
       scatterPlot.then(scatterPlot => {
         const layoutObj = scatterPlot.layout;
@@ -434,7 +442,6 @@ export default {
           }
         });
       });
-
 
     },
 
@@ -540,7 +547,7 @@ export default {
       const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
 
       const newTraces = null;
-      if (this.optimalview){
+      if (this.optimalview != null) {
         let direction = this.formatOptimalDisplay(this.optimalview);
         const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
 
@@ -609,7 +616,7 @@ export default {
           Plotly.update(this.$refs.chart, newTraces, layout, 1);
       }
 
-      Plotly.update(this.$refs.chart, newTraces, {}, 1);
+      Plotly.update(this.$refs.chart, this.newTraces, {}, 1);
     },
 
     
@@ -637,7 +644,7 @@ export default {
         // Reset Pareto Frontier
         this.dataPoints.forEach(array => { array.hidden = false; });
         const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
-        if (this.optimalview){
+        if (this.optimalview != null){
           let direction = this.formatOptimalDisplay(this.optimalview);
           const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
 
@@ -1781,7 +1788,7 @@ export default {
 <style scoped>
 
 .butns {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.8rem;
   /* font-family: 'Roboto', sans-serif; */
 }
 .custom-height-button {
@@ -1911,7 +1918,6 @@ export default {
 .info-table{
   margin-right: 15px;
   margin-top: 1rem;
-
 }
 
 /* Table data */
@@ -1943,9 +1949,20 @@ font-size: 16px !important;
   border-bottom-right-radius: 10px; 
 }
 
+/* Remove hover effect */
+.custom-table tr:hover {
+  background-color: inherit !important;
+}
+
+
 /* Tools Table */
+.content-table{
+  display: flex;
+  justify-content: center;
+}
+
 .tools-table {
-  width: 100%;
+  width: 90%;
   border-collapse: collapse;
 }
 
@@ -1963,12 +1980,12 @@ font-size: 16px !important;
 }
 
 .tools-table .tools-th {
-  width: 60%;
+  width: 55%;
   /* border-top-left-radius: 10px; */
 }
 
 .tools-table .classify-th {
-  width: 40%;
+  width: 45%;
   /* border-top-right-radius: 10px; */
 }
 
@@ -2029,14 +2046,13 @@ font-size: 16px !important;
   background-color: rgba(237, 231, 231, 0.5);
 }
 
-
+/* quartile-message */
 .custom-alert-icon {
   cursor: pointer;
   float: right;
-
 }
 
 .quartile-message{
-  width: 200px;
+  width: 195px;
 }
 </style>
