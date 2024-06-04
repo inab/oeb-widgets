@@ -7,10 +7,10 @@
           <!-- BUTTONS -->
           <v-btn-toggle class="custom-btn-toggle">
 
-            <!-- Dropdown for Clas -->
+            <!-- Dropdown for Classification -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button" :disabled="loading">
                   {{classificationButtonText}}
                 </v-btn>
               </template>
@@ -78,7 +78,7 @@
         />
 
         <!-- ID AND DATE TABLE -->
-        <div class="info-table">
+        <div class="info-table" v-if="datasetModDate">
           <v-simple-table class="custom-table">
           <tbody>
                 <tr>
@@ -94,8 +94,8 @@
       </v-col>
 
       <!-- Table -->
-      <v-col cols="4" >
-        <v-simple-table class="tools-table" height="800px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
+      <v-col cols="4" class="content-table">
+        <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
           <thead>
             <tr>
               <th class="tools-th">Participants</th>
@@ -114,7 +114,7 @@
                   <div class="quartile-message">
                     <p><b>The Square quartile label</b></p>
                     <p>Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
-                  denotes quartiles above average and 'Bottom (B)' those below, offering clarity in rankin</p></div>
+                  denotes quartiles above average and 'Bottom (B)' those below, offering clarity in rankin.</p></div>
                 </v-tooltip>
               </th>
             </tr>
@@ -166,6 +166,7 @@ export default {
   },
   data() {
     return {
+      loading: false,
       datasetId: null,
       datasetModDate: null,
       visualizationData: null,
@@ -224,6 +225,7 @@ export default {
       this.datasetModDate = this.dataJson.dates.modification
       this.visualizationData = data.visualization
       this.optimalview = data.visualization.optimization
+      
       // Save original data for future use
       this.originalData = this.dataJson;
 
@@ -242,46 +244,80 @@ export default {
       ]));
 
       // Calculate Pareto frontier
-      let direction = this.formatOptimalDisplay(this.optimalview);
-      this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
+      if (this.optimalview != null){
+        // Activate classification button
+        this.loading = false
+        
+        let direction = this.formatOptimalDisplay(this.optimalview);
+        this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
 
-      // If the pareto returns only one point, we create two extra points to represent it.
-      if (this.paretoPoints.length == 1){
-        const extraPoint = [this.paretoPoints[0][0],0];
-        const extraPoint2 = [Math.max(...this.xValues),this.paretoPoints[0][1]];
-        this.paretoPoints.unshift(extraPoint);
-        this.paretoPoints.push(extraPoint2);
-      }
-
-      const globalParetoTrace = {
-        x: this.paretoPoints.map((point) => point[0]),
-        y: this.paretoPoints.map((point) => point[1]),
-        mode: 'lines',
-        type: 'scatter',
-        name: '<span style="color:black;">Global Pareto Frontier</span>',
-        line: {
-          dash: 'dot',
-          width: 2,
-          color: 'rgb(152, 152, 152)',
-        },
-      };
-
-      const dynamicParetoTrace = {
-        x: this.paretoPoints.map((point) => point[0]),
-        y: this.paretoPoints.map((point) => point[1]),
-        mode: 'lines',
-        type: 'scatter',
-        name: 'Dynamic Pareto Frontier',
-        line: {
-          dash: 'dot',
-          width: 2,
-          color: 'rgb(244, 124, 33)',
+        // If the pareto returns only one point, we create two extra points to represent it.
+        if (this.paretoPoints.length == 1){
+          const extraPoint = [this.paretoPoints[0][0],0];
+          const extraPoint2 = [Math.max(...this.xValues),this.paretoPoints[0][1]];
+          this.paretoPoints.unshift(extraPoint);
+          this.paretoPoints.push(extraPoint2);
         }
-      };
 
-      // Add the pareto trace to the trace array
-      traces.push(globalParetoTrace, dynamicParetoTrace);
+        const globalParetoTrace = {
+          x: this.paretoPoints.map((point) => point[0]),
+          y: this.paretoPoints.map((point) => point[1]),
+          mode: 'lines',
+          type: 'scatter',
+          name: '<span style="color:black;">Global Pareto Frontier</span>',
+          line: {
+            dash: 'dot',
+            width: 2,
+            color: 'rgb(152, 152, 152)',
+          },
+        };
 
+        const dynamicParetoTrace = {
+          x: this.paretoPoints.map((point) => point[0]),
+          y: this.paretoPoints.map((point) => point[1]),
+          mode: 'lines',
+          type: 'scatter',
+          name: 'Dynamic Pareto Frontier',
+          line: {
+            dash: 'dot',
+            width: 2,
+            color: 'rgb(244, 124, 33)',
+          }
+        };
+
+        // Add the pareto trace to the trace array
+        traces.push(globalParetoTrace, dynamicParetoTrace);
+      }else{
+        // Disable classification button
+        this.loading = true;
+
+        const globalParetoTrace = {
+          x: ['0'],
+          y: ['0'],
+          mode: 'lines',
+          type: 'scatter',
+          name: '<span style="color:black;">Global Pareto Frontier</span>',
+          line: {
+            dash: 'dot',
+            width: 2,
+            color: 'rgb(152, 152, 152)',
+          },
+        }
+        const dynamicParetoTrace = {
+          x: ['0'],
+          y: ['0'],
+          mode: 'lines',
+          type: 'scatter',
+          name: 'Dynamic Pareto Frontier',
+          line: {
+            dash: 'dot',
+            width: 2,
+            color: 'rgb(244, 124, 33)',
+          }
+        }
+        traces.push(globalParetoTrace, dynamicParetoTrace);
+      }
+      
 
       // Go through each object in challenge participants
       // Create traces
@@ -375,6 +411,7 @@ export default {
       const scatterPlot = Plotly.newPlot(this.$refs.chart, traces, layout, config);
       // ----------------------------------------------------------------
 
+
       // Get rangees from ejest graph
       scatterPlot.then(scatterPlot => {
         const layoutObj = scatterPlot.layout;
@@ -406,7 +443,6 @@ export default {
         });
       });
 
-
     },
 
 
@@ -416,16 +452,20 @@ export default {
     // Function to format the optimal display direction
     formatOptimalDisplay(optimization) {
       let direction = null;
-      if (optimization == 'top-right') {
-        direction = 'topRight';
-      } else if (optimization == 'top-left') {
-        direction = 'topLeft';
-      } else if (optimization == 'bottom-right') {
-        direction = 'bottomRight';
-      }else if (optimization == 'bottom-left') {
-        direction = 'bottomLeft';
+      if (optimization){
+        if (optimization == 'top-right') {
+          direction = 'topRight';
+        } else if (optimization == 'top-left') {
+          direction = 'topLeft';
+        } else if (optimization == 'bottom-right') {
+          direction = 'bottomRight';
+        }else if (optimization == 'bottom-left') {
+          direction = 'bottomLeft';
+        }
+        return direction
+      }else{
+        return null
       }
-      return direction
     },
 
     // ACTIONS FOR TABLE
@@ -506,13 +546,17 @@ export default {
 
       const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
 
-      let direction = this.formatOptimalDisplay(this.optimalview);
-      const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+      const newTraces = null;
+      if (this.optimalview != null) {
+        let direction = this.formatOptimalDisplay(this.optimalview);
+        const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
 
-      const newTraces = { 
-        x: [newParetoPoints.map((point) => point[0])], 
-        y: [newParetoPoints.map((point) => point[1])] 
-      };
+        this.newTraces = { 
+          x: [newParetoPoints.map((point) => point[0])], 
+          y: [newParetoPoints.map((point) => point[1])] 
+        };
+      }
+      
 
       // Update Square Quartiles
       // ----------------------------------------------------------------
@@ -572,12 +616,10 @@ export default {
           Plotly.update(this.$refs.chart, newTraces, layout, 1);
       }
 
-      Plotly.update(this.$refs.chart, newTraces, {}, 1);
+      Plotly.update(this.$refs.chart, this.newTraces, {}, 1);
     },
 
     
-
-
     // ----------------------------------------------------------------
     // CLASSIFICATIONS
     // ----------------------------------------------------------------
@@ -602,24 +644,27 @@ export default {
         // Reset Pareto Frontier
         this.dataPoints.forEach(array => { array.hidden = false; });
         const updatedVisibleTools = this.dataPoints.filter((tool) => !tool.hidden);
-        let direction = this.formatOptimalDisplay(this.optimalview);
-        const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+        if (this.optimalview != null){
+          let direction = this.formatOptimalDisplay(this.optimalview);
+          const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
 
-        // Update the trace of the Pareto frontier
-        const newTraces = {
-          x: [newParetoPoints.map((point) => point[0])],
-          y: [newParetoPoints.map((point) => point[1])]
-        };
+          // Update the trace of the Pareto frontier
+          const newTraces = {
+            x: [newParetoPoints.map((point) => point[0])],
+            y: [newParetoPoints.map((point) => point[1])]
+          };
 
+          // Modificar despues
+          const layout = {
+            shapes: false ? shapes : [],
+            annotations: this.getOptimizationArrow(this.optimalview)
+          };
 
-        // Modificar despues
-        const layout = {
-          shapes: false ? shapes : [],
-          annotations: this.getOptimizationArrow(this.optimalview)
-        };
+          // Update only the trace data, without changing the layout
+          Plotly.update(this.$refs.chart, newTraces, layout, 1);
 
-        // Update only the trace data, without changing the layout
-        Plotly.update(this.$refs.chart, newTraces, layout, 1);
+        }
+        // restarts the traces
         Plotly.restyle(this.$refs.chart, { visible: visibleArray });
       }
     },
@@ -630,7 +675,9 @@ export default {
     // ----------------------------------------------------------------
     // Function to toggle the visibility of the Square Quartiles
     toggleQuartilesVisibility () {
-
+      if (!this.optimalview){
+          return;
+      }
       const plot = document.getElementById('scatterPlot')
       if (plot && plot.data) {
         const numTraces = plot.data.length;
@@ -897,6 +944,9 @@ export default {
     // ----------------------------------------------------------------
     // Function to toggle the visibility of the Diagonal Quartiles
     toggleDiagonalQuartile (){
+      if (!this.optimalview){
+          return;
+      }
       const plot = document.getElementById('scatterPlot')
       if (plot && plot.data) {
         const numTraces = plot.data.length;
@@ -1167,6 +1217,10 @@ export default {
     // ----------------------------------------------------------------
     // Function to toggle the visibility of the Kmeans Clustering
     toggleKmeansVisibility () {
+      // If optimization is null return.
+      if (!this.optimalview){
+        return;
+      }
 
       const plot = document.getElementById('scatterPlot')
       if (plot && plot.data) {
@@ -1468,64 +1522,69 @@ export default {
       return currentSymbol;
     },
     // This function creates the annotations for the optimization arrow
+    // If optimization is null it returns an empty array
     getOptimizationArrow(optimization) {
       const arrowAnnotations = [];
       let arrowX, arrowY;
       let axAdjustment = 0;
       let ayAdjustment = 0;
 
-      // Determine arrow position based on optimization
-      switch (optimization) {
-        case 'top-left':
-          arrowX = 0;
-          arrowY = 0.98;
-          axAdjustment = 35;
-          ayAdjustment = 30;
-          break;
+      // If optimization create annotations for the arrow
+      if (optimization){
+        // Determine arrow position based on optimization
+        switch (optimization) {
+          case 'top-left':
+            arrowX = 0;
+            arrowY = 0.98;
+            axAdjustment = 35;
+            ayAdjustment = 30;
+            break;
 
-        case 'top-right':
-          arrowX = 0.98;
-          arrowY = 0.98;
-          axAdjustment = -30;
-          ayAdjustment = 35;
-          break;
+          case 'top-right':
+            arrowX = 0.98;
+            arrowY = 0.98;
+            axAdjustment = -30;
+            ayAdjustment = 35;
+            break;
 
-        case 'bottom-right':
-          arrowX = 1;
-          arrowY = 0;
-          axAdjustment = -30;
-          ayAdjustment = -30;
-          break;
+          case 'bottom-right':
+            arrowX = 1;
+            arrowY = 0;
+            axAdjustment = -30;
+            ayAdjustment = -30;
+            break;
 
-        default:
-          // By default, place the arrow in the upper left corner
-          arrowX = 0;
-          arrowY = 0;
-          axAdjustment = 30;
-          ayAdjustment = -35;
+          default:
+            // By default, place the arrow in the upper left corner
+            arrowX = 0;
+            arrowY = 0;
+            axAdjustment = 30;
+            ayAdjustment = -35;
+        }
+
+        // Crear la anotación para la flecha
+        const arrowAnnotation = {
+          x: arrowX,
+          y: arrowY,
+          xref: 'paper',
+          yref: 'paper',
+          text: 'Optimal corner',
+          font: {
+            color: '#6C757D'
+          },
+          showarrow: true,
+          arrowhead: 3,
+          ax: axAdjustment,
+          ay: ayAdjustment,
+          arrowsize: 1,
+          arrowcolor: '#6C757D'
+        };
+
+        arrowAnnotations.push(arrowAnnotation);
+        return arrowAnnotations;
+      }else{
+        return null;
       }
-
-      // Crear la anotación para la flecha
-      const arrowAnnotation = {
-        x: arrowX,
-        y: arrowY,
-        xref: 'paper',
-        yref: 'paper',
-        text: 'Optimal corner',
-        font: {
-          color: '#6C757D'
-        },
-        showarrow: true,
-        arrowhead: 3,
-        ax: axAdjustment,
-        ay: ayAdjustment,
-        arrowsize: 1,
-        arrowcolor: '#6C757D'
-      };
-
-      arrowAnnotations.push(arrowAnnotation);
-
-      return arrowAnnotations;
     },
     // Image Position
     getImagePosition(optimization) {
@@ -1729,7 +1788,7 @@ export default {
 <style scoped>
 
 .butns {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.8rem;
   /* font-family: 'Roboto', sans-serif; */
 }
 .custom-height-button {
@@ -1859,7 +1918,6 @@ export default {
 .info-table{
   margin-right: 15px;
   margin-top: 1rem;
-
 }
 
 /* Table data */
@@ -1891,9 +1949,20 @@ font-size: 16px !important;
   border-bottom-right-radius: 10px; 
 }
 
+/* Remove hover effect */
+.custom-table tr:hover {
+  background-color: inherit !important;
+}
+
+
 /* Tools Table */
+.content-table{
+  display: flex;
+  justify-content: center;
+}
+
 .tools-table {
-  width: 100%;
+  width: 90%;
   border-collapse: collapse;
 }
 
@@ -1911,12 +1980,12 @@ font-size: 16px !important;
 }
 
 .tools-table .tools-th {
-  width: 60%;
+  width: 55%;
   /* border-top-left-radius: 10px; */
 }
 
 .tools-table .classify-th {
-  width: 40%;
+  width: 45%;
   /* border-top-right-radius: 10px; */
 }
 
@@ -1977,14 +2046,13 @@ font-size: 16px !important;
   background-color: rgba(237, 231, 231, 0.5);
 }
 
-
+/* quartile-message */
 .custom-alert-icon {
   cursor: pointer;
   float: right;
-
 }
 
 .quartile-message{
-  width: 200px;
+  width: 195px;
 }
 </style>
