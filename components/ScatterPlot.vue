@@ -95,6 +95,7 @@
 
       <!-- Table -->
       <v-col cols="4" class="content-table">
+        <transition name="fade">
         <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
           <thead>
             <tr>
@@ -104,7 +105,7 @@
                   <template v-slot:activator="{ on, attrs }">
                     <i
                       class="material-icons custom-alert-icon"
-                      v-if="viewSquare"
+                      v-if="viewSquare === true"
                       v-bind="attrs"
                       v-on="on"
                     >
@@ -134,6 +135,7 @@
           </tbody>
 
         </v-simple-table>
+      </transition>
       </v-col>
 
     </v-row>
@@ -218,14 +220,13 @@ export default {
     // CREATE PLOT, FUNCTION PRINCIPAL
     // ----------------------------------------------------------------
     async renderChart() {
-      
       // Fetch dataset values
-      const data = this.dataJson.inline_data
-      this.datasetId = await this.dataJson._id
-      this.datasetModDate = this.dataJson.dates.modification
-      this.visualizationData = data.visualization
-      this.optimalview = data.visualization.optimization
-      
+      const data = this.dataJson.inline_data;
+      this.datasetId = await this.dataJson._id;
+      this.datasetModDate = this.dataJson.dates.modification;
+      this.visualizationData = data.visualization;
+      this.optimalview = data.visualization.optimization;
+
       // Save original data for future use
       this.originalData = this.dataJson;
 
@@ -238,23 +239,23 @@ export default {
       this.toolID = data.challenge_participants.map((participant) => participant.tool_id);
       this.allToolID = data.challenge_participants.map((participant) => participant.tool_id);
 
-      this.dataPoints = data.challenge_participants.map((participant) => ([
+      this.dataPoints = data.challenge_participants.map((participant) => [
         participant.metric_x,
         participant.metric_y,
-      ]));
+      ]);
 
       // Calculate Pareto frontier
-      if (this.optimalview != null){
+      if (this.optimalview != null) {
         // Activate classification button
-        this.loading = false
-        
+        this.loading = false;
+
         let direction = this.formatOptimalDisplay(this.optimalview);
         this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
 
         // If the pareto returns only one point, we create two extra points to represent it.
-        if (this.paretoPoints.length == 1){
-          const extraPoint = [this.paretoPoints[0][0],0];
-          const extraPoint2 = [Math.max(...this.xValues),this.paretoPoints[0][1]];
+        if (this.paretoPoints.length == 1) {
+          const extraPoint = [this.paretoPoints[0][0], 0];
+          const extraPoint2 = [Math.max(...this.xValues), this.paretoPoints[0][1]];
           this.paretoPoints.unshift(extraPoint);
           this.paretoPoints.push(extraPoint2);
         }
@@ -270,6 +271,7 @@ export default {
             width: 2,
             color: 'rgb(152, 152, 152)',
           },
+          opacity: 0,
         };
 
         const dynamicParetoTrace = {
@@ -282,12 +284,13 @@ export default {
             dash: 'dot',
             width: 2,
             color: 'rgb(244, 124, 33)',
-          }
+          },
+          opacity: 0,
         };
 
         // Add the pareto trace to the trace array
         traces.push(globalParetoTrace, dynamicParetoTrace);
-      }else{
+      } else {
         // Disable classification button
         this.loading = true;
 
@@ -302,7 +305,8 @@ export default {
             width: 2,
             color: 'rgb(152, 152, 152)',
           },
-        }
+          opacity: 0,
+        };
         const dynamicParetoTrace = {
           x: ['0'],
           y: ['0'],
@@ -313,11 +317,11 @@ export default {
             dash: 'dot',
             width: 2,
             color: 'rgb(244, 124, 33)',
-          }
-        }
+          },
+          opacity: 0,
+        };
         traces.push(globalParetoTrace, dynamicParetoTrace);
       }
-      
 
       // Go through each object in challenge participants
       // Create traces
@@ -330,9 +334,9 @@ export default {
           mode: 'markers',
           type: 'scatter',
           marker: {
-              size: 14,
-              symbol: this.getSymbol(),
-              color: this.getColor()
+            size: 14,
+            symbol: this.getSymbol(),
+            color: this.getColor(),
           },
           name: participant.tool_id,
           showlegend: true,
@@ -342,8 +346,7 @@ export default {
             visible: true,
             color: '#000000',
             width: 2,
-            thickness: 0.3
-              
+            thickness: 0.3,
           },
           error_y: {
             type: 'data',
@@ -351,8 +354,9 @@ export default {
             visible: true,
             color: '#000000',
             width: 2,
-            thickness: 0.3
+            thickness: 0.3,
           },
+          opacity: 0,
         };
         traces.push(trace);
       }
@@ -371,7 +375,7 @@ export default {
               color: 'black',
               weight: 'bold',
             },
-          }
+          },
         },
         yaxis: {
           title: {
@@ -393,57 +397,64 @@ export default {
           yref: 'paper',
           font: {
             size: 16,
-          }
+          },
         },
         // plot_bgcolor: '#F8F9F9',
         images: this.getImagePosition(this.optimalview),
-        showlegend: true
+        showlegend: true,
       };
 
       const config = {
         displayModeBar: false,
         responsive: true,
-        hovermode: false
+        hovermode: false,
       };
 
-      // ----------------------------------------------------------------
-      // CREATE SCATTER PLOT
-      const scatterPlot = Plotly.newPlot(this.$refs.chart, traces, layout, config);
-      // ----------------------------------------------------------------
+      // Create the chart with initial opacity set to 0
+      Plotly.newPlot(this.$refs.chart, traces, layout, config).then((gd) => {
+        // Animate traces from opacity 0 to 1
+        Plotly.animate(gd, {
+          data: traces.map((trace, index) => ({
+            opacity: 1,
+          })),
+          traces: Array.from(Array(traces.length).keys()),
+          layout: {},
+        }, {
+          transition: {
+            duration: 1000,
+            easing: 'cubic-in-out',
+          },
+          frame: {
+            duration: 500,
+          },
+        });
 
-
-      // Get rangees from ejest graph
-      scatterPlot.then(scatterPlot => {
-        const layoutObj = scatterPlot.layout;
+        // Get ranges from the scatter plot
+        const layoutObj = gd.layout;
         this.optimalXaxis = layoutObj.xaxis.range;
         this.optimalYaxis = layoutObj.yaxis.range;
-      });
 
-      // Capture legend event
-      // ----------------------------------------------------------------
-      scatterPlot.then((gd) => {
+        // Capture legend event
         gd.on('plotly_legendclick', (event) => {
           let traceIndex = event.curveNumber;
 
           // If Pareto was clicked (index 0) do nothing
           if (traceIndex === 0) {
             return false;
-
           } else if (traceIndex === 1) {
             return true;
-          }
-          else {
+          } else {
             // Update the graph based on the selected trace
             // Si response es false la trace no se oculta de la legend
-            let response = this.updatePlotOnSelection(traceIndex)
+            let response = this.updatePlotOnSelection(traceIndex);
             if (response == false) {
-                return false;
+              return false;
             }
           }
         });
       });
-
     },
+
 
 
     // ----------------------------------------------------------------
@@ -2044,6 +2055,17 @@ font-size: 16px !important;
 
 .quartil-zero {
   background-color: rgba(237, 231, 231, 0.5);
+}
+
+
+/* Apply animation when table enters and leaves */
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 
 /* quartile-message */
