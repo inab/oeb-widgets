@@ -21,19 +21,20 @@
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-download custom-height-button">
+                <v-btn :disabled="loading" outlined v-bind="attrs" v-on="on"
+                  class="button-download custom-height-button">
                   Download
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item class="menu-item">
-                  <v-list-item-title>SVG</v-list-item-title>
+                <v-list-item @click="downloadChart('svg', datasetId)" class="menu-item">
+                  <v-list-item-title>SVG (only plot)</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item">
+                <v-list-item @click="downloadChart('png', datasetId)" class="menu-item">
                   <v-list-item-title>PNG</v-list-item-title>
                 </v-list-item>
                 <v-divider></v-divider>
-                <v-list-item class="menu-item">
+                <v-list-item @click="downloadChart('pdf', datasetId)" class="menu-item">
                   <v-list-item-title>PDF</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -44,7 +45,7 @@
       </v-col>
     </v-row>
 
-    <v-row class="mt-4">
+    <v-row class="mt-4" id="todownload">
       <!-- Chart -->
       <v-col cols="8" id="chartCapture">
         <div ref="chart" id="barPlot"></div>
@@ -63,7 +64,7 @@
       </v-col>
 
       <!-- Quartile Table -->
-      <v-col id="quartileCapture" cols="4" v-if="sortOrder === 'sorted'">
+      <v-col cols="4" id="quartileCapture" v-if="sortOrder === 'sorted'">
         <v-simple-table class="tools-table" height="800px" fixed-header
           :class="{ 'fade-in': sortOrder === 'sorted', 'fade-out': sortOrder === 'raw' }" id='quartileTable'>
 
@@ -88,7 +89,7 @@
           </thead>
           <tbody>
             <tr v-for="(quartile, index) in quartileDataArray" :key="index">
-              <td >{{ quartile.tool }}</td>
+              <td>{{ quartile.tool }}</td>
               <td :style="{ backgroundColor: quartile.quartile.bgColor }">{{ quartile.quartile.quartile }}
               </td>
             </tr>
@@ -101,6 +102,11 @@
 <script>
 // Importación de Plotly
 import Plotly from 'plotly.js-dist';
+import 'jspdf-autotable';
+
+// REQUIREMENTS
+const html2canvas = require('html2canvas');
+const { jsPDF } = require('jspdf');
 
 export default {
   name: 'BarPlot',
@@ -686,7 +692,175 @@ export default {
       });
 
       return metricPositions;
+    },
+
+    // ----------------------------------------------------------------
+    // DOWNLOAD CHART
+    // ----------------------------------------------------------------
+
+    async downloadChart(format) {
+      console.log('Downloading chart as', format);
+      try {
+        if (format === 'pdf') {
+          const pdf = new jsPDF();
+          this.layout.images[0].opacity = 0.5;
+          Plotly.relayout(this.$refs.chart, this.layout);
+
+          pdf.setFontSize(12);
+          pdf.setFont(undefined, 'bold');
+          pdf.text(`Benchmarking Results of ${this.datasetId} at ${this.formatDateString(this.datasetModDate)}`, 105, 10, null, null, 'center');
+
+          // Get chart image as base64 data URI
+          const chartImageURI = await Plotly.toImage(document.getElementById('barPlot'), { format: 'png', width: 750, height: 600 });
+
+          pdf.addImage(chartImageURI, 'PNG', 10, 20);
+
+          if (this.showAdditionalTable) {
+            const columns = ["Tool", "Quartile"]; // Define your columns
+
+            // Extract data from quartileDataArray
+            const rows = this.quartileDataArray.map(q => [q.tool, q.quartile.quartile]);
+
+            // Generate autoTable with custom styles
+            pdf.autoTable({
+              head: [columns],
+              body: rows,
+              startY: 190,
+              theme: 'grid',
+              tableWidth: 'auto',
+              styles: {
+                cellPadding: 1,
+                fontSize: 8,
+                overflow: 'linebreak',
+                halign: 'center'
+              },
+              headStyles: {
+                fillColor: [108, 117, 125]
+              },
+              willDrawCell: function (data) {
+
+                if (data.row.section === 'body') {
+                  // Check if the column header matches 'Quartile'
+                  if (data.column.dataKey === 1) {
+                    // Access the raw value of the cell
+                    const quartileValue = data.cell.raw;
+                    if (quartileValue === 1) {
+                      pdf.setFillColor(237, 248, 233)
+                    } else if (quartileValue === 2) {
+                      pdf.setFillColor(186, 228, 179)
+                    } else if (quartileValue === 3) {
+                      pdf.setFillColor(116, 196, 118)
+                    } else if (quartileValue === 4) {
+                      pdf.setFillColor(35, 139, 69)
+                    }
+                  }
+
+                }
+              },
+            });
+            // Save the PDF
+            pdf.save(`benchmarking_chart__quartiles_${this.datasetId}.${format}`);
+            this.layout.images[0].opacity = 0;
+            Plotly.relayout(this.$refs.chart, this.layout);
+          } else {
+            // Save the PDF
+            pdf.save(`benchmarking_chart_${this.datasetId}.${format}`);
+            this.layout.images[0].opacity = 0;
+            Plotly.relayout(this.$refs.chart, this.layout);
+          }
+
+
+        } else if (format === 'svg') {
+
+          this.layout.images[0].opacity = 0.5;
+          Plotly.relayout(this.$refs.chart, this.layout);
+          const graphDiv = document.getElementById('barPlot')
+          Plotly.downloadImage(graphDiv, { format: 'svg', width: 800, height: 600, filename: `benchmarking_chart_${this.datasetId}` });
+          this.layout.images[0].opacity = 0;
+          Plotly.relayout(this.$refs.chart, this.layout);
+
+        } else {
+
+          this.layout.images[0].opacity = 0.5;
+          Plotly.relayout(this.$refs.chart, this.layout);
+
+          const toDownloadChart = document.getElementById('chartCapture');
+          const downloadChart = await html2canvas(toDownloadChart, {
+            scrollX: 0,
+            scrollY: 0,
+            width: toDownloadChart.offsetWidth,
+            height: toDownloadChart.offsetHeight,
+          });
+
+
+
+          if (this.showAdditionalTable) {
+            const element = document.getElementById('quartileCapture');
+
+            // Save the original styles
+            const originalOpacity = element.style.opacity;
+            const originalHeight = element.style.height;
+            const originalOverflow = element.style.overflow;
+
+            // Temporarily set styles to ensure full table visibility
+            element.style.opacity = '1';
+            element.style.height = 'auto';
+            element.style.overflow = 'visible';
+
+            const downloadTable = await html2canvas(element, {
+              scrollX: 0,
+              scrollY: 0,
+              width: element.offsetWidth,
+              height: element.offsetHeight,
+            });
+
+            // Restore the original styles
+            element.style.opacity = originalOpacity;
+            element.style.height = originalHeight;
+            element.style.overflow = originalOverflow;
+
+            const chartDownloadImage = downloadChart.toDataURL(`image/${format}`);
+            const tableDownloadImage = downloadTable.toDataURL(`image/${format}`);
+            const chartLink = document.createElement('a');
+            const tableLink = document.createElement('a');
+            chartLink.href = chartDownloadImage;
+            tableLink.href = tableDownloadImage;
+            chartLink.download = `benchmarking_chart__quartiles_chart_${this.datasetId}.${format}`;
+            tableLink.download = `benchmarking_chart__quartiles_table_${this.datasetId}.${format}`;
+            // Append links to the document
+            document.body.appendChild(chartLink);
+            document.body.appendChild(tableLink);
+
+            // Trigger the download
+            chartLink.click();
+            tableLink.click();
+
+            // Remove links from the document
+            document.body.removeChild(chartLink);
+            document.body.removeChild(tableLink);
+
+
+          } else {
+            const chartDownloadImage = downloadChart.toDataURL(`image/${format}`);
+            const chartLink = document.createElement('a');
+            chartLink.href = chartDownloadImage;
+            chartLink.download = `benchmarking_chart_${this.datasetId}.${format}`;
+            document.body.appendChild(chartLink);
+            chartLink.click();
+            document.body.removeChild(chartLink);
+
+          }
+
+
+          this.layout.images[0].opacity = 0;
+          Plotly.relayout(this.$refs.chart, this.layout);
+
+        }
+      } catch (error) {
+        console.error('Error downloading chart:', error);
+      }
     }
+
   }
 
 
