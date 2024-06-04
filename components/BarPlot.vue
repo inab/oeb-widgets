@@ -20,9 +20,9 @@
               view</v-btn>
             <!-- Dropdown for Download -->
             <v-menu offset-y>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn :disabled="loading" outlined v-bind="attrs" v-on="on"
-                  class="button-download custom-height-button">
+              <template v-slot:activator="{ on, attrs }" >
+                <v-btn  outlined v-bind="attrs" v-on="on"
+                  class="button-download custom-height-button" :disabled="loading">
                   Download
                 </v-btn>
               </template>
@@ -51,7 +51,7 @@
         <div ref="chart" id="barPlot"></div>
         <br>
         <!-- ID AND DATE TABLE -->
-        <v-simple-table class="custom-table">
+        <v-simple-table class="custom-table" v-if="datasetModDate">
           <tbody>
             <tr>
               <th class="first-th">Dataset ID</th>
@@ -64,7 +64,7 @@
       </v-col>
 
       <!-- Quartile Table -->
-      <v-col cols="4" id="quartileCapture" v-if="sortOrder === 'sorted'">
+      <v-col cols="4" id="quartileCapture" v-if="sortOrder === 'sorted' && Object.keys(quartileData).length > 1">
         <v-simple-table class="tools-table" height="800px" fixed-header
           :class="{ 'fade-in': sortOrder === 'sorted', 'fade-out': sortOrder === 'raw' }" id='quartileTable'>
 
@@ -792,32 +792,28 @@ export default {
             height: toDownloadChart.offsetHeight,
           });
 
-
-
           if (this.showAdditionalTable) {
             const element = document.getElementById('quartileCapture');
+            const table = document.getElementById('quartileTable');
 
-            // Save the original styles
-            const originalOpacity = element.style.opacity;
-            const originalHeight = element.style.height;
-            const originalOverflow = element.style.overflow;
+            const innerDiv = table.querySelector('div[style*="height"]');
+            const originalHeight = innerDiv.style.height;
 
-            // Temporarily set styles to ensure full table visibility
-            element.style.opacity = '1';
-            element.style.height = 'auto';
-            element.style.overflow = 'visible';
 
-            const downloadTable = await html2canvas(element, {
+            // Remove the height style
+            innerDiv.style.height = '';
+            element.style.opcity = 1
+            table.style.opacity = 1
+
+            const downloadTable = await html2canvas(table, {
               scrollX: 0,
               scrollY: 0,
-              width: element.offsetWidth,
-              height: element.offsetHeight,
+              width: table.offsetWidth,
+              height: table.offsetHeight,
             });
 
-            // Restore the original styles
-            element.style.opacity = originalOpacity;
-            element.style.height = originalHeight;
-            element.style.overflow = originalOverflow;
+            // Restore the height style
+            innerDiv.style.height = originalHeight;
 
             const chartDownloadImage = downloadChart.toDataURL(`image/${format}`);
             const tableDownloadImage = downloadTable.toDataURL(`image/${format}`);
@@ -827,6 +823,7 @@ export default {
             tableLink.href = tableDownloadImage;
             chartLink.download = `benchmarking_chart__quartiles_chart_${this.datasetId}.${format}`;
             tableLink.download = `benchmarking_chart__quartiles_table_${this.datasetId}.${format}`;
+
             // Append links to the document
             document.body.appendChild(chartLink);
             document.body.appendChild(tableLink);
@@ -839,7 +836,6 @@ export default {
             document.body.removeChild(chartLink);
             document.body.removeChild(tableLink);
 
-
           } else {
             const chartDownloadImage = downloadChart.toDataURL(`image/${format}`);
             const chartLink = document.createElement('a');
@@ -848,14 +844,12 @@ export default {
             document.body.appendChild(chartLink);
             chartLink.click();
             document.body.removeChild(chartLink);
-
           }
-
 
           this.layout.images[0].opacity = 0;
           Plotly.relayout(this.$refs.chart, this.layout);
-
         }
+
       } catch (error) {
         console.error('Error downloading chart:', error);
       }
