@@ -101,11 +101,11 @@
             <tr>
               <th class="tools-th">Participants</th>
               <th class="classify-th">{{ viewKmeans ? 'Clusters' : 'Quartile' }}
-                <v-tooltip bottom>
+                <v-tooltip :key="viewSquare" bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <i
                       class="material-icons custom-alert-icon"
-                      v-if="viewSquare === true"
+                      v-if="viewSquare"
                       v-bind="attrs"
                       v-on="on"
                     >
@@ -114,8 +114,11 @@
                   </template>
                   <div class="quartile-message">
                     <p><b>The Square quartile label</b></p>
-                    <p>Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
-                  denotes quartiles above average and 'Bottom (B)' those below, offering clarity in rankin.</p></div>
+                    <p>
+                      Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
+                      denotes quartiles above average and 'Bottom (B)' those below, offering clarity in ranking.
+                    </p>
+                  </div>
                 </v-tooltip>
               </th>
             </tr>
