@@ -50,7 +50,7 @@
                   <v-list-item-title>PDF</v-list-item-title>
                 </v-list-item>
                 <v-list-item class="menu-item" @click="downloadChart('svg', datasetId)">
-                  <v-list-item-title>SVG</v-list-item-title>
+                  <v-list-item-title>SVG (only plot)</v-list-item-title>
                 </v-list-item>
                 <v-divider></v-divider>
                 <v-list-item class="menu-item" @click="downloadChart('json', datasetId)">
@@ -96,49 +96,49 @@
       <!-- Table -->
       <v-col cols="4" class="content-table">
         <transition name="fade">
-        <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
-          <thead>
-            <tr>
-              <th class="tools-th">Participants</th>
-              <th class="classify-th">{{ viewKmeans ? 'Clusters' : 'Quartile' }}
-                <v-tooltip :key="viewSquare" bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <i
-                      class="material-icons custom-alert-icon"
-                      v-if="viewSquare"
-                      v-bind="attrs"
-                      v-on="on"
-                    >
-                      {{ icon }}
-                    </i>
-                  </template>
-                  <div class="quartile-message">
-                    <p><b>The Square quartile label</b></p>
-                    <p>
-                      Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
-                      denotes quartiles above average and 'Bottom (B)' those below, offering clarity in ranking.
-                    </p>
+          <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
+            <thead>
+              <tr>
+                <th class="tools-th">Participants</th>
+                <th class="classify-th">{{ viewKmeans ? 'Clusters' : 'Quartile' }}
+                  <v-tooltip :key="viewSquare" bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <i
+                        class="material-icons custom-alert-icon"
+                        v-if="viewSquare"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        {{ icon }}
+                      </i>
+                    </template>
+                    <div class="quartile-message">
+                      <p><b>The Square quartile label</b></p>
+                      <p>
+                        Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
+                        denotes quartiles above average and 'Bottom (B)' those below, offering clarity in ranking.
+                      </p>
+                    </div>
+                  </v-tooltip>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in tableData" :key="item.tool_id"
+                    :class="{ 'quartil-zero': item.cuartil === 0 }">
+                <td class="toolColumn" @click="handleTableRowClick(index)">
+                  <div class="color-box"
+                    :style="{ backgroundColor: markerColors[index % markerColors.length], opacity: (item.cuartil === 0 ? 0.5 : 1) }">
                   </div>
-                </v-tooltip>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(item, index) in tableData" :key="item.tool_id"
-                  :class="{ 'quartil-zero': item.cuartil === 0 }">
-              <td class="toolColumn" @click="handleTableRowClick(index)">
-                <div class="color-box"
-                  :style="{ backgroundColor: markerColors[index % markerColors.length], opacity: (item.cuartil === 0 ? 0.5 : 1) }">
-                </div>
-                  <span>{{ item.tool_id }}</span>
-              </td>
+                    <span>{{ item.tool_id }}</span>
+                </td>
 
-              <td :class="'quartil-' + item.cuartil">{{ item.label }}</td>
-            </tr>
-          </tbody>
+                <td :class="'quartil-' + item.cuartil">{{ item.label }}</td>
+              </tr>
+            </tbody>
 
-        </v-simple-table>
-      </transition>
+          </v-simple-table>
+        </transition>
       </v-col>
 
     </v-row>
@@ -374,7 +374,7 @@ export default {
             text: this.visualizationData.x_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -385,7 +385,7 @@ export default {
             text: this.visualizationData.y_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -399,7 +399,7 @@ export default {
           xref: 'paper',
           yref: 'paper',
           font: {
-            size: 16,
+            size: 18,
           },
         },
         // plot_bgcolor: '#F8F9F9',
@@ -1464,7 +1464,7 @@ export default {
             text: this.visualizationData.x_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -1476,7 +1476,7 @@ export default {
             text: this.visualizationData.y_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -1495,7 +1495,7 @@ export default {
             text: this.visualizationData.x_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -1507,7 +1507,7 @@ export default {
             text: this.visualizationData.y_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -1673,20 +1673,32 @@ export default {
       if (format === 'png') {
         if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
           const toDownloadDiv = document.getElementById('todownload');
+
+          const table = document.getElementById('benchmarkingTable');
+          const innerDiv = table.querySelector('div[style*="height"]');
+          const originalHeight = innerDiv.style.height;
+
+          // Remove the height style
+          innerDiv.style.height = '';
+
           const downloadCanvas = await html2canvas(toDownloadDiv, {
             scrollX: 0,
             scrollY: 0,
             width: toDownloadDiv.offsetWidth,
             height: toDownloadDiv.offsetHeight,
           });
-            const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
 
-            const link = document.createElement('a');
-            link.href = downloadImage;
-            link.download = `benchmarking_chart_${datasetId}.${format}`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+          // Restore the height style
+          innerDiv.style.height = originalHeight;
+
+          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+
+          const link = document.createElement('a');
+          link.href = downloadImage;
+          link.download = `benchmarking_chart_${datasetId}.${format}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         } else {
           const options = { format, height: 700, width: 800 };
           Plotly.toImage(chart, options)
