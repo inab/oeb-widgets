@@ -50,7 +50,7 @@
                   <v-list-item-title>PDF</v-list-item-title>
                 </v-list-item>
                 <v-list-item class="menu-item" @click="downloadChart('svg', datasetId)">
-                  <v-list-item-title>SVG</v-list-item-title>
+                  <v-list-item-title>SVG (only plot)</v-list-item-title>
                 </v-list-item>
                 <v-divider></v-divider>
                 <v-list-item class="menu-item" @click="downloadChart('json', datasetId)">
@@ -95,45 +95,50 @@
 
       <!-- Table -->
       <v-col cols="4" class="content-table">
-        <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
-          <thead>
-            <tr>
-              <th class="tools-th">Participants</th>
-              <th class="classify-th">{{ viewKmeans ? 'Clusters' : 'Quartile' }}
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <i
-                      class="material-icons custom-alert-icon"
-                      v-if="viewSquare"
-                      v-bind="attrs"
-                      v-on="on"
-                    >
-                      {{ icon }}
-                    </i>
-                  </template>
-                  <div class="quartile-message">
-                    <p><b>The Square quartile label</b></p>
-                    <p>Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
-                  denotes quartiles above average and 'Bottom (B)' those below, offering clarity in rankin.</p></div>
-                </v-tooltip>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(item, index) in tableData" :key="item.tool_id"
-                  :class="{ 'quartil-zero': item.cuartil === 0 }">
-              <td class="toolColumn" @click="handleTableRowClick(index)">
-                <div class="color-box"
-                  :style="{ backgroundColor: markerColors[index % markerColors.length], opacity: (item.cuartil === 0 ? 0.5 : 1) }">
-                </div>
-                  <span>{{ item.tool_id }}</span>
-              </td>
+        <transition name="fade">
+          <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
+            <thead>
+              <tr>
+                <th class="tools-th">Participants</th>
+                <th class="classify-th">{{ viewKmeans ? 'Clusters' : 'Quartile' }}
+                  <v-tooltip :key="viewSquare" bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <i
+                        class="material-icons custom-alert-icon"
+                        v-if="viewSquare"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        {{ icon }}
+                      </i>
+                    </template>
+                    <div class="quartile-message">
+                      <p><b>The Square quartile label</b></p>
+                      <p>
+                        Quartiles 2 and 3 are 'Mid (M)', representing average rankings, while 'Top (T)' 
+                        denotes quartiles above average and 'Bottom (B)' those below, offering clarity in ranking.
+                      </p>
+                    </div>
+                  </v-tooltip>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in tableData" :key="item.tool_id"
+                    :class="{ 'quartil-zero': item.cuartil === 0 }">
+                <td class="toolColumn" @click="handleTableRowClick(index)">
+                  <div class="color-box"
+                    :style="{ backgroundColor: markerColors[index % markerColors.length], opacity: (item.cuartil === 0 ? 0.5 : 1) }">
+                  </div>
+                    <span>{{ item.tool_id }}</span>
+                </td>
 
-              <td :class="'quartil-' + item.cuartil">{{ item.label }}</td>
-            </tr>
-          </tbody>
+                <td :class="'quartil-' + item.cuartil">{{ item.label }}</td>
+              </tr>
+            </tbody>
 
-        </v-simple-table>
+          </v-simple-table>
+        </transition>
       </v-col>
 
     </v-row>
@@ -145,6 +150,7 @@
 import Plotly from 'plotly.js-dist';
 import * as statistics from 'simple-statistics';
 import CustomAlert from './CustomAlert.vue';
+import 'jspdf-autotable';
 // REQUIREMENTS
 var clusterMaker = require('clusters');
 const pf = require('pareto-frontier');
@@ -218,14 +224,13 @@ export default {
     // CREATE PLOT, FUNCTION PRINCIPAL
     // ----------------------------------------------------------------
     async renderChart() {
-      
       // Fetch dataset values
-      const data = this.dataJson.inline_data
-      this.datasetId = await this.dataJson._id
-      this.datasetModDate = this.dataJson.dates.modification
-      this.visualizationData = data.visualization
-      this.optimalview = data.visualization.optimization
-      
+      const data = this.dataJson.inline_data;
+      this.datasetId = await this.dataJson._id;
+      this.datasetModDate = this.dataJson.dates.modification;
+      this.visualizationData = data.visualization;
+      this.optimalview = data.visualization.optimization;
+
       // Save original data for future use
       this.originalData = this.dataJson;
 
@@ -238,23 +243,23 @@ export default {
       this.toolID = data.challenge_participants.map((participant) => participant.tool_id);
       this.allToolID = data.challenge_participants.map((participant) => participant.tool_id);
 
-      this.dataPoints = data.challenge_participants.map((participant) => ([
+      this.dataPoints = data.challenge_participants.map((participant) => [
         participant.metric_x,
         participant.metric_y,
-      ]));
+      ]);
 
       // Calculate Pareto frontier
-      if (this.optimalview != null){
+      if (this.optimalview != null) {
         // Activate classification button
-        this.loading = false
-        
+        this.loading = false;
+
         let direction = this.formatOptimalDisplay(this.optimalview);
         this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
 
         // If the pareto returns only one point, we create two extra points to represent it.
-        if (this.paretoPoints.length == 1){
-          const extraPoint = [this.paretoPoints[0][0],0];
-          const extraPoint2 = [Math.max(...this.xValues),this.paretoPoints[0][1]];
+        if (this.paretoPoints.length == 1) {
+          const extraPoint = [this.paretoPoints[0][0], 0];
+          const extraPoint2 = [Math.max(...this.xValues), this.paretoPoints[0][1]];
           this.paretoPoints.unshift(extraPoint);
           this.paretoPoints.push(extraPoint2);
         }
@@ -270,6 +275,7 @@ export default {
             width: 2,
             color: 'rgb(152, 152, 152)',
           },
+          opacity: 0,
         };
 
         const dynamicParetoTrace = {
@@ -282,12 +288,13 @@ export default {
             dash: 'dot',
             width: 2,
             color: 'rgb(244, 124, 33)',
-          }
+          },
+          opacity: 0,
         };
 
         // Add the pareto trace to the trace array
         traces.push(globalParetoTrace, dynamicParetoTrace);
-      }else{
+      } else {
         // Disable classification button
         this.loading = true;
 
@@ -302,7 +309,8 @@ export default {
             width: 2,
             color: 'rgb(152, 152, 152)',
           },
-        }
+          opacity: 0,
+        };
         const dynamicParetoTrace = {
           x: ['0'],
           y: ['0'],
@@ -313,11 +321,11 @@ export default {
             dash: 'dot',
             width: 2,
             color: 'rgb(244, 124, 33)',
-          }
-        }
+          },
+          opacity: 0,
+        };
         traces.push(globalParetoTrace, dynamicParetoTrace);
       }
-      
 
       // Go through each object in challenge participants
       // Create traces
@@ -330,9 +338,9 @@ export default {
           mode: 'markers',
           type: 'scatter',
           marker: {
-              size: 14,
-              symbol: this.getSymbol(),
-              color: this.getColor()
+            size: 14,
+            symbol: this.getSymbol(),
+            color: this.getColor(),
           },
           name: participant.tool_id,
           showlegend: true,
@@ -342,8 +350,7 @@ export default {
             visible: true,
             color: '#000000',
             width: 2,
-            thickness: 0.3
-              
+            thickness: 0.3,
           },
           error_y: {
             type: 'data',
@@ -351,8 +358,9 @@ export default {
             visible: true,
             color: '#000000',
             width: 2,
-            thickness: 0.3
+            thickness: 0.3,
           },
+          opacity: 0,
         };
         traces.push(trace);
       }
@@ -367,18 +375,18 @@ export default {
             text: this.visualizationData.x_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
-          }
+          },
         },
         yaxis: {
           title: {
             text: this.visualizationData.y_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -392,58 +400,65 @@ export default {
           xref: 'paper',
           yref: 'paper',
           font: {
-            size: 16,
-          }
+            size: 18,
+          },
         },
         // plot_bgcolor: '#F8F9F9',
         images: this.getImagePosition(this.optimalview),
-        showlegend: true
+        showlegend: true,
       };
 
       const config = {
         displayModeBar: false,
         responsive: true,
-        hovermode: false
+        hovermode: false,
       };
 
-      // ----------------------------------------------------------------
-      // CREATE SCATTER PLOT
-      const scatterPlot = Plotly.newPlot(this.$refs.chart, traces, layout, config);
-      // ----------------------------------------------------------------
+      // Create the chart with initial opacity set to 0
+      Plotly.newPlot(this.$refs.chart, traces, layout, config).then((gd) => {
+        // Animate traces from opacity 0 to 1
+        Plotly.animate(gd, {
+          data: traces.map((trace, index) => ({
+            opacity: 1,
+          })),
+          traces: Array.from(Array(traces.length).keys()),
+          layout: {},
+        }, {
+          transition: {
+            duration: 1000,
+            easing: 'cubic-in-out',
+          },
+          frame: {
+            duration: 500,
+          },
+        });
 
-
-      // Get rangees from ejest graph
-      scatterPlot.then(scatterPlot => {
-        const layoutObj = scatterPlot.layout;
+        // Get ranges from the scatter plot
+        const layoutObj = gd.layout;
         this.optimalXaxis = layoutObj.xaxis.range;
         this.optimalYaxis = layoutObj.yaxis.range;
-      });
 
-      // Capture legend event
-      // ----------------------------------------------------------------
-      scatterPlot.then((gd) => {
+        // Capture legend event
         gd.on('plotly_legendclick', (event) => {
           let traceIndex = event.curveNumber;
 
           // If Pareto was clicked (index 0) do nothing
           if (traceIndex === 0) {
             return false;
-
           } else if (traceIndex === 1) {
             return true;
-          }
-          else {
+          } else {
             // Update the graph based on the selected trace
             // Si response es false la trace no se oculta de la legend
-            let response = this.updatePlotOnSelection(traceIndex)
+            let response = this.updatePlotOnSelection(traceIndex);
             if (response == false) {
-                return false;
+              return false;
             }
           }
         });
       });
-
     },
+
 
 
     // ----------------------------------------------------------------
@@ -1450,7 +1465,7 @@ export default {
             text: this.visualizationData.x_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -1462,7 +1477,7 @@ export default {
             text: this.visualizationData.y_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -1481,7 +1496,7 @@ export default {
             text: this.visualizationData.x_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -1493,7 +1508,7 @@ export default {
             text: this.visualizationData.y_axis,
             font: {
               family: 'Arial, sans-serif',
-              size: 16,
+              size: 18,
               color: 'black',
               weight: 'bold',
             },
@@ -1659,20 +1674,32 @@ export default {
       if (format === 'png') {
         if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
           const toDownloadDiv = document.getElementById('todownload');
+
+          const table = document.getElementById('benchmarkingTable');
+          const innerDiv = table.querySelector('div[style*="height"]');
+          const originalHeight = innerDiv.style.height;
+
+          // Remove the height style
+          innerDiv.style.height = '';
+
           const downloadCanvas = await html2canvas(toDownloadDiv, {
             scrollX: 0,
             scrollY: 0,
             width: toDownloadDiv.offsetWidth,
             height: toDownloadDiv.offsetHeight,
           });
-            const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
 
-            const link = document.createElement('a');
-            link.href = downloadImage;
-            link.download = `benchmarking_chart_${datasetId}.${format}`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+          // Restore the height style
+          innerDiv.style.height = originalHeight;
+
+          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+
+          const link = document.createElement('a');
+          link.href = downloadImage;
+          link.download = `benchmarking_chart_${datasetId}.${format}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         } else {
           const options = { format, height: 700, width: 800 };
           Plotly.toImage(chart, options)
@@ -1701,32 +1728,76 @@ export default {
           });
 
       } else if (format === 'pdf') {
+
         const pdf = new jsPDF();
-        
-        pdf.text('Benchmarking', 105, 10, null, null, 'center');
+
+        pdf.setFontSize(12);
+        pdf.setFont(undefined, 'bold');
+        pdf.text(`Benchmarking Results of ${this.datasetId} at ${this.formatDateString(this.datasetModDate)}`, 105, 10, null, null, 'center');
 
         // Get chart image as base64 data URI
-        const chartImageURI = await Plotly.toImage(chart, { format: 'png' });
-        const chartHeight = 130;
-        const chartWidth = 170;
-
-        pdf.addImage(chartImageURI, 'PNG', 10, 15, chartWidth, chartHeight, null, 'FAST', 0, null, 'center');
+        const chartImageURI = await Plotly.toImage(document.getElementById('scatterPlot'), { format: 'png', width: 750, height: 600 });
+        pdf.addImage(chartImageURI, 'PNG', 10, 20);
 
         if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
-          const table = document.getElementById('benchmarkingTable');
-          const downloadCanvas = await html2canvas(table, {
-            scrollX: 0,
-            scrollY: 0,
-            width: table.offsetWidth,
-            height: table.offsetHeight,
-          });
-          const tableImageURI = downloadCanvas.toDataURL(`image/png`);
-          const tableHeight = 140;
-          const tableWidth = 100;
+          const columns = ["Participants", this.viewKmeans ? "Clusters" : "Quartile"];
+          
+          // Extract data from quartileDataArray
+          const rows = this.tableData.map(q => [q.tool_id, q.label,]);
+          const quantileNumber = this.tableData.map(q => q.cuartil);
+          const markerColors = ['#D62728', '#FF7F0E', '#8C564B', '#E377C2', '#4981B6', '#BCBD22', '#9467BD', '#0C9E7B', '#7F7F7F', '#31B8BD', '#FB8072', '#62D353']
 
-          // Add 20 pixels to the vertical position for the second image
-          const tableVerticalPosition = chartHeight + 10;
-          pdf.addImage(tableImageURI, 'PNG', 10, 150, tableVerticalPosition, tableHeight, tableWidth, null, 'FAST', 0, null, 'center');
+
+          // Generate autoTable with custom styles
+          pdf.autoTable({
+              head: [columns],
+              body: rows,
+              startY: 190,
+              theme: 'grid',
+              tableWidth: 'auto',
+              styles: {
+                cellPadding: 1,
+                fontSize: 8,
+                overflow: 'linebreak',
+                halign: 'left',
+              },
+              headStyles: {
+                fillColor: [108, 117, 125]
+              },
+              willDrawCell: function (data) {
+
+                if (data.row.section === 'body') {
+                  // Check if the column header matches 'Quartile'
+                  if (data.column.dataKey === 1) {
+                    // Access the raw value of the cell
+                    const rowIndex = data.row.index;
+                    const quartileValue = quantileNumber[rowIndex];
+                   // Set fill color based on quartile value
+                   if (quartileValue === 1) {
+                      pdf.setFillColor(237, 248, 233)
+                    } else if (quartileValue === 2) {
+                      pdf.setFillColor(186, 228, 179)
+                    } else if (quartileValue === 3) {
+                      pdf.setFillColor(116, 196, 118)
+                    } else if (quartileValue === 4) {
+                      pdf.setFillColor(35, 139, 69)
+                    }
+                  }else if (data.column.dataKey === 0) {
+                    // Draw colored "div" in Tool column
+                    const rowIndex = data.row.index;
+                    const color = markerColors[rowIndex % markerColors.length];
+                    pdf.setFillColor(color);
+
+                    // Dibuja el rectángulo coloreado
+                    pdf.rect(data.cell.x -2, data.cell.y, 10, data.cell.height, 'F');
+                    // Restaura el color de relleno original
+                    pdf.setFillColor(255, 255, 255);
+
+                  }
+
+                } 
+              },
+            });
         }
 
         // Save the PDF
@@ -2044,6 +2115,17 @@ font-size: 16px !important;
 
 .quartil-zero {
   background-color: rgba(237, 231, 231, 0.5);
+}
+
+
+/* Apply animation when table enters and leaves */
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 
 /* quartile-message */
