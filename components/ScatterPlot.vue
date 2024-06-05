@@ -150,6 +150,7 @@
 import Plotly from 'plotly.js-dist';
 import * as statistics from 'simple-statistics';
 import CustomAlert from './CustomAlert.vue';
+import 'jspdf-autotable';
 // REQUIREMENTS
 var clusterMaker = require('clusters');
 const pf = require('pareto-frontier');
@@ -1727,32 +1728,76 @@ export default {
           });
 
       } else if (format === 'pdf') {
+
         const pdf = new jsPDF();
-        
-        pdf.text('Benchmarking', 105, 10, null, null, 'center');
+
+        pdf.setFontSize(12);
+        pdf.setFont(undefined, 'bold');
+        pdf.text(`Benchmarking Results of ${this.datasetId} at ${this.formatDateString(this.datasetModDate)}`, 105, 10, null, null, 'center');
 
         // Get chart image as base64 data URI
-        const chartImageURI = await Plotly.toImage(chart, { format: 'png' });
-        const chartHeight = 130;
-        const chartWidth = 170;
-
-        pdf.addImage(chartImageURI, 'PNG', 10, 15, chartWidth, chartHeight, null, 'FAST', 0, null, 'center');
+        const chartImageURI = await Plotly.toImage(document.getElementById('scatterPlot'), { format: 'png', width: 750, height: 600 });
+        pdf.addImage(chartImageURI, 'PNG', 10, 20);
 
         if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
-          const table = document.getElementById('benchmarkingTable');
-          const downloadCanvas = await html2canvas(table, {
-            scrollX: 0,
-            scrollY: 0,
-            width: table.offsetWidth,
-            height: table.offsetHeight,
-          });
-          const tableImageURI = downloadCanvas.toDataURL(`image/png`);
-          const tableHeight = 140;
-          const tableWidth = 100;
+          const columns = ["Participants", this.viewKmeans ? "Clusters" : "Quartile"];
+          
+          // Extract data from quartileDataArray
+          const rows = this.tableData.map(q => [q.tool_id, q.label,]);
+          const quantileNumber = this.tableData.map(q => q.cuartil);
+          const markerColors = ['#D62728', '#FF7F0E', '#8C564B', '#E377C2', '#4981B6', '#BCBD22', '#9467BD', '#0C9E7B', '#7F7F7F', '#31B8BD', '#FB8072', '#62D353']
 
-          // Add 20 pixels to the vertical position for the second image
-          const tableVerticalPosition = chartHeight + 10;
-          pdf.addImage(tableImageURI, 'PNG', 10, 150, tableVerticalPosition, tableHeight, tableWidth, null, 'FAST', 0, null, 'center');
+
+          // Generate autoTable with custom styles
+          pdf.autoTable({
+              head: [columns],
+              body: rows,
+              startY: 190,
+              theme: 'grid',
+              tableWidth: 'auto',
+              styles: {
+                cellPadding: 1,
+                fontSize: 8,
+                overflow: 'linebreak',
+                halign: 'left',
+              },
+              headStyles: {
+                fillColor: [108, 117, 125]
+              },
+              willDrawCell: function (data) {
+
+                if (data.row.section === 'body') {
+                  // Check if the column header matches 'Quartile'
+                  if (data.column.dataKey === 1) {
+                    // Access the raw value of the cell
+                    const rowIndex = data.row.index;
+                    const quartileValue = quantileNumber[rowIndex];
+                   // Set fill color based on quartile value
+                   if (quartileValue === 1) {
+                      pdf.setFillColor(237, 248, 233)
+                    } else if (quartileValue === 2) {
+                      pdf.setFillColor(186, 228, 179)
+                    } else if (quartileValue === 3) {
+                      pdf.setFillColor(116, 196, 118)
+                    } else if (quartileValue === 4) {
+                      pdf.setFillColor(35, 139, 69)
+                    }
+                  }else if (data.column.dataKey === 0) {
+                    // Draw colored "div" in Tool column
+                    const rowIndex = data.row.index;
+                    const color = markerColors[rowIndex % markerColors.length];
+                    pdf.setFillColor(color);
+
+                    // Dibuja el rectángulo coloreado
+                    pdf.rect(data.cell.x -2, data.cell.y, 10, data.cell.height, 'F');
+                    // Restaura el color de relleno original
+                    pdf.setFillColor(255, 255, 255);
+
+                  }
+
+                } 
+              },
+            });
         }
 
         // Save the PDF

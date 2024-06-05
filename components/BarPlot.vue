@@ -716,7 +716,7 @@ export default {
           pdf.addImage(chartImageURI, 'PNG', 10, 20);
 
           if (this.showAdditionalTable) {
-            const columns = ["Tool", "Quartile"]; // Define your columns
+            const columns = ["Participants", "Quartile"]; // Define your columns
 
             // Extract data from quartileDataArray
             const rows = this.quartileDataArray.map(q => [q.tool, q.quartile.quartile]);
