@@ -1,69 +1,131 @@
-# oeb-widgets
+# OpenEBench Widgets
 
-## Build Setup
+**oeb-widgets** is a collection of easy-to-use Vue components for benchmarking, initially designed for OpenEBench but also usable in other projects, making it a flexible tool. It includes two essential visualizers: a **Bar Plot** and a **Scatter Plot**, both capable of handling metrics and classifications. This package has been crafted with scalability in mind, allowing for seamless addition of more visualizers in future updates.
 
-```bash
-# install dependencies
-$ npm install
+## Features
 
-# serve with hot reload at localhost:3000
-$ npm run dev
+* Bar Plot: Create bar charts to compare different categories.
+* Scatter Plot: Generate scatter plots to visualize relationships between variables.
+* Extensible Design: Built to support additional visualizers in future versions.
 
-# build for production and launch server
-$ npm run build
-$ npm run start
+## Installation
 
-# generate static project
-$ npm run generate
+To install the package run:
+
+```
+npm i @inb/oeb_visualizations
 ```
 
-For detailed explanation on how things work, check out the [documentation](https://nuxtjs.org).
+## How to Usage
 
-## Special Directories
+#### Import
 
-You can create the following extra directories, some of which have special behaviors. Only `pages` is required; you can delete them if you don't want to use their functionality.
+```
+import LoaderWidgets from '@inb/oeb-widgets/components/LoaderWidgets.vue';
+```
 
-### `assets`
+#### Usage
 
-The assets directory contains your uncompiled assets such as Stylus or Sass files, images, or fonts.
+```
+<LoaderWidgets :data-chart="data"></LoaderWidgets>
+```
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/assets).
+Firstly, import the **LoaderWidgets** component, which receives and processes data and displays either a bar plot or a scatter plot based on the provided data.
 
-### `components`
+## Bar Plot
 
-The components directory contains your Vue.js components. Components make up the different parts of your page and can be reused and imported into your pages, layouts and even other components.
+Bar plot shows the results of a benchmarking challenge that uses one single evaluation metric in the form of a Barplot. Challenge participants are shown in the X axis, while the value of their metric is shown in the Y axis.
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/components).
+#### Classification
 
-### `layouts`
+The results of this plot format can be transformed into a tabular format by sorting the participants in descending/ascending order according to their metrics and applying a quartile classification over that linear set of values. This classification splits the participants into four different groups/clusters depending on their performance. Clusters are separated in the plot with vertical lines and shown in the right table together with a green color-scale, which is easier to interpret for both experts and non-expert users.
 
-Layouts are a great help when you want to change the look and feel of your Nuxt app, whether you want to include a sidebar or have distinct layouts for mobile and desktop.
+![This is an alt text.](static/widgetsPicture/Barplot.png)
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/layouts).
+The structure of the data you receive for Bar plot is as follows:
 
+#### Example Data Structure in Bar Plot
 
-### `pages`
+```json
+{
+  "_id": "OEBD003000002S",
+  "dates": {
+    "creation": "2018-04-09T00:00:00Z",
+    "modification": "2020-04-05T14:00:00Z"
+  },
+  "dataset_contact_ids": ["Name.Lastname"],
+  "inline_data": {
+    "challenge_participants": [
+      {
+        "tool_id": "group01",
+        "metric_value": 0.932
+      },
+      {
+        "tool_id": "group02",
+        "metric_value": 0.9279
+      },
+    ],
+    "visualization": {
+      "metric": "F-Measure",
+      "type": "bar-plot"
+    }
+  }
+}
 
-This directory contains your application views and routes. Nuxt will read all the `*.vue` files inside this directory and setup Vue Router automatically.
+```
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/get-started/routing).
+## Scatter Plot
 
-### `plugins`
+Scatter plot muestra los resultados de experimentos científicos de evaluación comparativa en formato de gráfico, y aplicar varios métodos de clasificación para transformarlos a formato tabular.
 
-The plugins directory contains JavaScript plugins that you want to run before instantiating the root Vue.js Application. This is the place to add Vue plugins and to inject functions or constants. Every time you need to use `Vue.use()`, you should create a file in `plugins/` and add its path to plugins in `nuxt.config.js`.
+#### Classification methods
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/plugins).
+* Square quartiles - divide the plotting area in four squares by getting the 2nd quartile of the X and Y metrics.
 
-### `static`
+![Square quartiles.](static/widgetsPicture/scatter-square.png )
 
-This directory contains your static files. Each file inside this directory is mapped to `/`.
+* Diagonal quartiles - divide the plotting area with diagonal lines by assigning a score to each participant based in the distance to the 'optimal performance'.
 
-Example: `/static/robots.txt` is mapped as `/robots.txt`.
+![Diagonal quartiles.](static/widgetsPicture/scatter-diagonal.png )
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/static).
+* Clustering - group the participants using the K-means clustering algorithm and sort the clusters according to the performance.
+![Clustering.](static/widgetsPicture/scatter-cluster.png )
 
-### `store`
+#### Example Data Structure for Scatter Plot
 
-This directory contains your Vuex store files. Creating a file in this directory automatically activates Vuex.
+```json
+{
+  "_id": "OEBD0080000U6A",
+  "dates": {
+    "creation": "2023-05-04T16:00:26Z",
+    "modification": "2023-11-05T13:09:13Z",
+    "public": null
+  },
+  "dataset_contact_ids": ["Name.Lastname", "Name.Lastname"],
+  "inline_data": {
+    "challenge_participants": [
+      {
+        "tool_id": "Domainoid+",
+        "metric_x": 220046,
+        "stderr_x": 0,
+        "metric_y": 0.91590127,
+        "stderr_y": 0.00081763741
+      },
+      {
+        "tool_id": "OMA_Groups",
+        "metric_x": 99657,
+        "stderr_x": 0,
+        "metric_y": 0.97144131,
+        "stderr_y": 0.00071919219
+      },
+    ],
+    "visualization": {
+      "type": "2D-plot",
+      "x_axis": "NR_ORTHOLOGS",
+      "y_axis": "avg Schlicker",
+      "optimization": "top-right"
+    }
+  }
+}
 
-More information about the usage of this directory in [the documentation](https://nuxtjs.org/docs/2.x/directory-structure/store).
+```
