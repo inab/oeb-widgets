@@ -96,7 +96,7 @@
       <!-- Table -->
       <v-col cols="4" class="content-table">
         <transition name="fade">
-          <v-simple-table class="tools-table" height="765px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
+          <v-simple-table class="tools-table" height="800px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
             <thead>
               <tr>
                 <th class="tools-th">Participants</th>
@@ -368,7 +368,7 @@ export default {
       // Create the chart layout
       const layout = {
         autosize: true,
-        height: 750,
+        height: 800,
         annotations: this.getOptimizationArrow(this.optimalview),
         xaxis: {
           title: {
@@ -392,7 +392,7 @@ export default {
             },
           },
         },
-        margin: { l: 60, r: 10, t: 0, b: 10, pad: 4 },
+        margin: { l: 60, r: 30, t: 0, b: 10, pad: 4 },
         legend: {
           orientation: 'h',
           x: 0,
@@ -1987,7 +1987,7 @@ export default {
 }
 
 .info-table{
-  margin-right: 15px;
+  margin-right: 30px;
   margin-top: 1rem;
 }
 
@@ -2005,7 +2005,7 @@ font-size: 16px !important;
 
 .custom-table td {
   border: 1px solid #e0e0e0;
-  padding: 10px;
+  /* padding: 10px; */
   text-align: center;
   font-size: 16px !important;
 }
@@ -2033,8 +2033,9 @@ font-size: 16px !important;
 }
 
 .tools-table {
-  width: 90%;
+  width: 100%;
   border-collapse: collapse;
+  margin-left: 20px;
 }
 
 .tools-table th{
@@ -2051,12 +2052,12 @@ font-size: 16px !important;
 }
 
 .tools-table .tools-th {
-  width: 55%;
+  width: 60%;
   /* border-top-left-radius: 10px; */
 }
 
 .tools-table .classify-th {
-  width: 45%;
+  width: 40%;
   /* border-top-right-radius: 10px; */
 }
 

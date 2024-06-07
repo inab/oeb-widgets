@@ -22,6 +22,10 @@ export default {
         required: true
       }
     },
+    data(){
+      console.log(this.dataChart);
+      return
+    }
 }
 </script>
 
