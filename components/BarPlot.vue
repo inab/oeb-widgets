@@ -51,7 +51,8 @@
         <div ref="chart" id="barPlot"></div>
         <br>
         <!-- ID AND DATE TABLE -->
-        <v-simple-table class="custom-table" v-if="datasetModDate">
+        <div class="info-table">
+          <v-simple-table class="custom-table" v-if="datasetModDate">
           <tbody>
             <tr>
               <th class="first-th">Dataset ID</th>
@@ -60,7 +61,8 @@
               <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
             </tr>
           </tbody>
-        </v-simple-table>
+          </v-simple-table>
+        </div>
       </v-col>
 
       <!-- Quartile Table -->
@@ -193,7 +195,7 @@ export default {
           },
           fixedrange: true,
           tickangle: -45,
-          tickfont: { size: 12 }
+          tickfont: { size: 16 }
         },
         yaxis: {
           title: {
@@ -206,7 +208,8 @@ export default {
             }
           },
           fixedrange: true,
-          range: [0, maxMetricValue + 0.1]
+          range: [0, maxMetricValue + 0.1],
+          tickfont: { size: 14 }
         },
         margin: { l: 50, r: 50, t: 100, b: 110, pad: 4 },
         images: [
@@ -994,6 +997,10 @@ export default {
   border-bottom-right-radius: 10px;
 }
 
+.info-table{
+  margin-right: 50px;
+}
+
 .custom-table {
   width: 100%;
   border-collapse: collapse;
@@ -1015,16 +1022,17 @@ export default {
 
 .custom-table .first-th {
   border-top-left-radius: 10px;
-  /* Adjust the radius as needed */
   border-bottom-left-radius: 10px;
-  /* Adjust the radius as needed */
 }
 
 .custom-table .last-td {
   border-top-right-radius: 10px;
-  /* Adjust the radius as needed */
   border-bottom-right-radius: 10px;
-  /* Adjust the radius as needed */
+}
+
+/* Remove hover effect */
+.custom-table tr:hover {
+  background-color: inherit !important;
 }
 
 /* Quartile table */
