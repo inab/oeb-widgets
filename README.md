@@ -16,7 +16,7 @@ To install the package run:
 npm i @inb/oeb_visualizations
 ```
 
-## How to Usage
+## How to Use
 
 #### Import
 

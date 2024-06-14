@@ -1,17 +1,33 @@
 {
   "name": "@inb/oeb-widgets",
-  "version": "1.0.13",
+  "version": "1.0.14",
+  "description": "Collection of visualisers for benchmarking.",
   "main": "dist/index.js",
   "scripts": {
     "build": "webpack"
   },
+  "author": "Ani Valle & Andrea Morales | <anilisethvalle@gmail.com>, <andreamorales309@gmail.com>",
+  "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/inab/oeb-widgets/tree/oeb-charts-package"
+    "url": "git+https://github.com/inab/oeb-widgets"
+  },
+  "bugs": {
+    "url": "https://github.com/inab/oeb-widgets/issues"
   },
   "keywords": [
     "nuxt",
-    "OEB"
+    "OEB",
+    "visualization",
+    "chart",
+    "scatter",
+    "barplot",
+    "benchmarking",
+    "openEBench",
+    "visualizer",
+    "elixir-europe",
+    "elixir-spain"
+
   ],
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.36",
