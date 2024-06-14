@@ -1,19 +1,25 @@
 {
-  "name": "oeb-widgets",
-  "version": "1.0.0",
-  "private": true,
+  "name": "@inb/oeb-widgets",
+  "version": "1.0.13",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "nuxt",
-    "build": "nuxt build",
-    "start": "nuxt start",
-    "generate": "nuxt generate"
+    "build": "webpack"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inab/oeb-widgets/tree/oeb-charts-package"
+  },
+  "keywords": [
+    "nuxt",
+    "OEB"
+  ],
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^1.2.36",
     "clusters": "^0.0.4",
     "core-js": "^3.25.3",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "nuxt": "^2.15.8",
     "pareto-frontier": "^1.1.1",
     "plotly.js-dist": "^2.32.0",
@@ -24,6 +30,9 @@
     "vuetify": "^2.6.6"
   },
   "devDependencies": {
-    "@nuxtjs/vuetify": "^1.12.3"
+    "@nuxtjs/vuetify": "^1.12.3",
+    "vue-loader": "^15.10.0",
+    "webpack": "^5.59.1",
+    "webpack-cli": "^5.1.4"
   }
 }
