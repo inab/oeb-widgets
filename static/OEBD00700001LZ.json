@@ -1,0 +1,37 @@
+{
+    "_id": "OEBD00700001LZ",
+    "dates": {
+        "modification": "2023-05-27T19:18:32Z"
+    },
+    "inline_data": {
+        "challenge_participants": [
+            {
+                "tool_id": "APAtrap",
+                "metric_x": 65.96018220475247,
+                "stderr_x": 0,
+                "metric_y": 0.6097369271265075,
+                "stderr_y": 0
+            },
+            {
+                "tool_id": "PAQR",
+                "metric_x": 19.536281776002312,
+                "stderr_x": 0,
+                "metric_y": 0.48201969597433136,
+                "stderr_y": 0
+            },
+            {
+                "tool_id": "QAPA",
+                "metric_x": 19.797236258868516,
+                "stderr_x": 0,
+                "metric_y": 0.5051201715585311,
+                "stderr_y": 0
+            }
+        ],
+        "visualization": {
+            "type": "2D-plot",
+            "x_axis": "Percent_FP_TPM:100nt",
+            "y_axis": "Pearson_r:intersection:100nt",
+            "optimization": "top-left"
+        }
+    }
+}
