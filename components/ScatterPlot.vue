@@ -15,7 +15,9 @@
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item class="menu-item"  @click="noClassification">
+                <v-list-item class="menu-item"  @click="noClassification"
+                :class="{ 'disabled-class': classificationDisabled }"
+                :disabled="classificationDisabled">
                   <v-list-item-title>No Classification</v-list-item-title>
                 </v-list-item >
                 <v-list-item class="menu-item" @click="toggleQuartilesVisibility" v-if="challenge_participants" 
