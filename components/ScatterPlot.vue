@@ -1162,45 +1162,43 @@ export default {
         if (better == 'top-left'){
           if (element.score <= first_quartile) {
             element.quartile = 4;
-            poly[0].push([element[0], element[1]]);
+            poly[0].push([element[0], element[1], element.quartile]);
           } else if (element.score <= second_quartile) {
             element.quartile = 3;
-            poly[1].push([element[0], element[1]]);
+            poly[1].push([element[0], element[1], element.quartile]);
           } else if (element.score <= third_quartile) {
             element.quartile = 2;
-            poly[3].push([element[0], element[1]]);
+            poly[3].push([element[0], element[1], element.quartile]);
           } else {
             element.quartile = 1;
-            poly[2].push([element[0], element[1]]);
+            poly[2].push([element[0], element[1], element.quartile]);
           }
 
         }else{
           if (element.score <= first_quartile) {
             element.quartile = 4;
-            poly[0].push([element[0], element[1]]);
+            poly[0].push([element[0], element[1], element.quartile]);
           } else if (element.score <= second_quartile) {
             element.quartile = 3;
-            poly[1].push([element[0], element[1]]);
+            poly[1].push([element[0], element[1], element.quartile]);
           } else if (element.score <= third_quartile) {
             element.quartile = 2;
-            poly[2].push([element[0], element[1]]);
+            poly[2].push([element[0], element[1], element.quartile]);
           } else {
             element.quartile = 1;
-            poly[3].push([element[0], element[1]]);
+            poly[3].push([element[0], element[1], element.quartile]);
           }
         }
-          
         
-
       });
 
-      let i = 4;
       let annotationDiagonal = []
       poly.forEach((group) => {
         let center = (this.getCentroid(group))
         const centroidX = center[0];
         const centroidY = center[1];
-        
+        const quartile = group[0][2];        
+      
         let annotationD = {
           xref: 'x',
           yref: 'y',
@@ -1208,7 +1206,7 @@ export default {
           xanchor: 'right',
           y: centroidY,
           yanchor: 'bottom',
-          text: i,
+          text: quartile,
           showarrow: false,
           font: {
             size: 30,
@@ -1217,7 +1215,6 @@ export default {
         }
         
         annotationDiagonal.push(annotationD)
-        i--;
       });
       return annotationDiagonal
     },
