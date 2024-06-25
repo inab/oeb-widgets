@@ -10,7 +10,7 @@
             <!-- Dropdown for Classification -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button" :disabled="loading">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button">
                   {{classificationButtonText}}
                 </v-btn>
               </template>
@@ -18,13 +18,21 @@
                 <v-list-item class="menu-item"  @click="noClassification">
                   <v-list-item-title>No Classification</v-list-item-title>
                 </v-list-item >
-                <v-list-item class="menu-item" @click="toggleQuartilesVisibility">
+                <v-list-item class="menu-item" @click="toggleQuartilesVisibility" v-if="challenge_participants" 
+                  :class="{ 'disabled-class': classificationDisabled }"
+                  :disabled="classificationDisabled" >
                   <v-list-item-title>Square Quartiles</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item" @click="toggleDiagonalQuartile">
+                <v-list-item class="menu-item" @click="toggleDiagonalQuartile"
+                  v-if="challenge_participants" 
+                  :class="{ 'disabled-class': classificationDisabled }"
+                  :disabled="classificationDisabled" >
                   <v-list-item-title>Diagonal Quartiles</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item" @click="toggleKmeansVisibility">
+                <v-list-item class="menu-item" @click="toggleKmeansVisibility"
+                  v-if="challenge_participants" 
+                  :class="{ 'disabled-class': classificationDisabled }"
+                  :disabled="classificationDisabled" >
                   <v-list-item-title>K-Means Clustering</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -172,11 +180,12 @@ export default {
   },
   data() {
     return {
-      loading: false,
+      classificationDisabled: false,
       datasetId: null,
       datasetModDate: null,
       visualizationData: null,
       optimalview: null,
+      challenge_participants: null,
       formattedDate: null,
       originalData: null,
       markerColors: ['#D62728', '#FF7F0E', '#8C564B', '#E377C2', '#4981B6', '#BCBD22', '#9467BD', '#0C9E7B', '#7F7F7F', '#31B8BD', '#FB8072', '#62D353'],
@@ -229,7 +238,11 @@ export default {
       this.datasetId = await this.dataJson._id;
       this.datasetModDate = this.dataJson.dates.modification;
       this.visualizationData = data.visualization;
-      this.optimalview = data.visualization.optimization;
+      this.optimalview = data.visualization.optimization !== undefined ? data.visualization.optimization : null;
+      this.challenge_participants = data.challenge_participants
+    
+      // Toggle classification button
+      this.classificationDisabled = this.toggleClassification(this.optimalview, this.challenge_participants)
 
       // Save original data for future use
       this.originalData = this.dataJson;
@@ -250,8 +263,6 @@ export default {
 
       // Calculate Pareto frontier
       if (this.optimalview != null) {
-        // Activate classification button
-        this.loading = false;
 
         let direction = this.formatOptimalDisplay(this.optimalview);
         this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
@@ -295,9 +306,6 @@ export default {
         // Add the pareto trace to the trace array
         traces.push(globalParetoTrace, dynamicParetoTrace);
       } else {
-        // Disable classification button
-        this.loading = true;
-
         const globalParetoTrace = {
           x: ['0'],
           y: ['0'],
@@ -639,6 +647,13 @@ export default {
     // CLASSIFICATIONS
     // ----------------------------------------------------------------
 
+    // ----------------------------------------------------------------
+    // TOGGLE CLASSIFICATIONS
+    // ----------------------------------------------------------------
+    toggleClassification(optimalview, challenge_participants ){
+      return optimalview === null || challenge_participants.length < 4;
+    },
+
     // NO CLASSIFICATION
     // ----------------------------------------------------------------
     noClassification(){
@@ -662,6 +677,14 @@ export default {
         if (this.optimalview != null){
           let direction = this.formatOptimalDisplay(this.optimalview);
           const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+          
+          // If the pareto returns only one point, we create two extra points to represent it.
+          if (newParetoPoints.length == 1) {
+            const extraPoint = [newParetoPoints[0][0], 0];
+            const extraPoint2 = [Math.max(...this.xValues), newParetoPoints[0][1]];
+            newParetoPoints.unshift(extraPoint);
+            newParetoPoints.push(extraPoint2);
+          }
 
           // Update the trace of the Pareto frontier
           const newTraces = {
