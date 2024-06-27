@@ -68,6 +68,21 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
+    extend(config, { isDev, isClient }) {
+      if (isClient) {
+        config.module.rules.push({
+          test: /\.(png|jpe?g|gif|svg)$/,
+          loader: 'url-loader',
+          options: {
+            limit: 1000, // Limita el tamaño en bytes
+            name: 'img/[name].[hash:7].[ext]'
+          }
+        });
+      }
+    }
+  },
+  env: {
+    BASE_URL: process.env.BASE_URL || '/',
   },
 
   server: {

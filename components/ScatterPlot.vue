@@ -161,7 +161,6 @@ import Plotly from 'plotly.js-dist';
 import * as statistics from 'simple-statistics';
 import CustomAlert from './CustomAlert.vue';
 import 'jspdf-autotable';
-import logo from '@/static/2018.OpenEBench.logo.Manual_page2.png'; // Importa la imagen
 
 // REQUIREMENTS
 var clusterMaker = require('clusters');
@@ -1660,7 +1659,7 @@ export default {
         y: positionY,
         sizex: 0.1,
         sizey: 0.3,
-        source: logo,
+        source: "/2018.OpenEBench.logo.Manual_page2.png",
         xref: "paper",
         yref: "paper",
         xanchor: "right",
