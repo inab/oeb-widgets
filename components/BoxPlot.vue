@@ -260,7 +260,36 @@ export default {
         this.layout = {
             title: '',
             autosize: true,
-            legend: {"orientation": "h"}
+            legend: {"orientation": "h"},
+            showlegend: true
+        }
+
+        if(this.orientation == 'Horizontal') {
+            delete this.layout.xaxis
+            this.layout.yaxis = {
+                title: {
+                    text: this.visualizationData.y_axis,
+                    font: {
+                        family: 'Arial, sans-serif',
+                        size: 18,
+                        color: 'black',
+                        weight: 'bold',
+                    },
+                }
+            }
+        } else {
+            delete this.layout.xaxis
+            this.layout.yaxis = {
+                title: {
+                    text: this.visualizationData.y_axis,
+                    font: {
+                        family: 'Arial, sans-serif',
+                        size: 18,
+                        color: 'black',
+                        weight: 'bold',
+                    },
+                }
+            }
         }
 
         Plotly.newPlot(this.$refs.chart, this.traces, this.layout, GRAPH_CONFIG);
@@ -296,8 +325,38 @@ export default {
         this.layout = {
             title: '',
             autosize: true,
-            legend: {"orientation": "h"}
+            legend: {"orientation": "h"},
+            showlegend: true,
         }
+
+        if(orientation == 'h') {
+            delete this.layout.yaxis
+            this.layout.xaxis = {
+                title: {
+                    text: this.visualizationData.y_axis,
+                    font: {
+                        family: 'Arial, sans-serif',
+                        size: 18,
+                        color: 'black',
+                        weight: 'bold',
+                    },
+                }
+            }
+        } else {
+            delete this.layout.xaxis
+            this.layout.yaxis = {
+                title: {
+                    text: this.visualizationData.y_axis,
+                    font: {
+                        family: 'Arial, sans-serif',
+                        size: 18,
+                        color: 'black',
+                        weight: 'bold',
+                    },
+                }
+            }
+        }
+
         Plotly.react(this.$refs.chart, this.traces, this.layout);
     },
 
@@ -329,11 +388,40 @@ export default {
 
     handleTableVisility() {
         let currentTraces = this.traces;
+        let orientation = this.orientation;
+        let orientationText = this.visualizationData.y_axis
         setTimeout(() => {
             let layout = {
                 title: '',
                 autosize: true,
-                legend: {"orientation": "h"}
+                legend: {"orientation": "h"},
+                showlegend: true
+            }
+
+            if(orientation == 'Horizontal' || orientation == 'h') {
+                layout.xaxis = {
+                    title: {
+                        text: orientationText,
+                        font: {
+                            family: 'Arial, sans-serif',
+                            size: 18,
+                            color: 'black',
+                            weight: 'bold',
+                        },
+                    }
+                }
+            } else {
+                layout.yaxis = {
+                    title: {
+                        text: orientationText,
+                        font: {
+                            family: 'Arial, sans-serif',
+                            size: 18,
+                            color: 'black',
+                            weight: 'bold',
+                        },
+                    }
+                }
             }
             Plotly.react(this.$refs.chart, currentTraces, layout);
         }, 50);
