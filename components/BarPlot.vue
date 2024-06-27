@@ -67,9 +67,7 @@
 
       <!-- Quartile Table -->
       <v-col cols="4" id="quartileCapture" v-if="sortOrder === 'sorted' && Object.keys(quartileData).length > 1">
-        <v-simple-table class="tools-table" height="800px" fixed-header
-          :class="{ 'fade-in': sortOrder === 'sorted', 'fade-out': sortOrder === 'raw' }" id='quartileTable'>
-
+        <v-simple-table class="tools-table" height="800px" fixed-header id='quartileTable'>
           <thead>
             <tr>
               <th class="tools-th">Participants</th>
