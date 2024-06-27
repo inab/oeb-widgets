@@ -15,9 +15,10 @@ export default {
   },
   async mounted() {
     // Fetch your data
-    const response = await fetch('./OEBD00200002UK.json');
+    const response = await fetch('./OEBD01000000QR.json');
     this.fetchedData = await response.json();
     this.fetchDataAndRender(this.fetchedData)
+
   },
   methods: {
     async fetchDataAndRender(data) {
@@ -35,6 +36,7 @@ export default {
           visualization:{}
         }
       }
+      
       // Prepare specific data for Plots
       if (type === 'bar-plot'){
         // Process challenge_participants data for BarPlot
@@ -72,6 +74,29 @@ export default {
           x_axis: visualization.x_axis,
           y_axis: visualization.y_axis,
           optimization: visualization.optimization
+        };
+      } else if (type === 'box-plot'){
+        // Process challenge_participants data for ScatterPlot
+        data.inline_data.challenge_participants.forEach(participant => {
+          const preparedParticipant = {
+            name: participant.name,
+            metric_id: participant.metric_id,
+            q1: participant.q1,
+            mean: participant.mean,
+            median: participant.median,
+            q3: participant.q3,
+            lowerfence: participant.lowerfence,
+            upperfence: participant.upperfence
+          };
+          this.preparedData.inline_data.challenge_participants.push(preparedParticipant);
+        });
+        // Process visualization data for ScatterPlot
+        const visualization = data.inline_data.visualization;
+        // const metrics_names = await this.getMetricsNames(visualization.x_axis, visualization.y_axis);
+        this.preparedData.inline_data.visualization = {
+          type: visualization.type,
+          y_axis: visualization.y_axis,
+          optimization: visualization.optimization?visualization.optimization:null
         };
       }else{
         return null;
