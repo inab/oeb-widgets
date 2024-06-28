@@ -15,7 +15,7 @@ module.exports = {
         filename: '[name].js',
         libraryTarget: 'umd',
         globalObject: 'this',
-        library: 'oeb-charts-test',
+        library: 'oeb-widgets',
     },
     module: {
       rules: [
