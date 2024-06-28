@@ -15,16 +15,16 @@ export default {
   },
   async mounted() {
     // Fetch your data
-    const response = await fetch('./OEBD004000000D.json');
-    //const response = await fetch('./raw_data_OEBD00200002UK0.json');
+    const response = await fetch('./OEBD00200002UK.json');
     this.fetchedData = await response.json();
     this.fetchDataAndRender(this.fetchedData)
+
   },
   methods: {
     async fetchDataAndRender(data) {
       // Sets charging status based on data presence
       this.loading = !data;
-      let visualization = data.datalink.inline_data.visualization
+      let visualization = data.inline_data.visualization
       let type = visualization.type
       // Prepare the data to pass to the component
       this.preparedData = {
@@ -36,10 +36,11 @@ export default {
           visualization:{}
         }
       }
+      
       // Prepare specific data for Plots
       if (type === 'bar-plot'){
         // Process challenge_participants data for BarPlot
-        data.datalink.inline_data.challenge_participants.forEach(participant => {
+        data.inline_data.challenge_participants.forEach(participant => {
           const preparedParticipant = {
             tool_id: participant.tool_id,
             metric_value: participant.metric_value,
@@ -48,14 +49,14 @@ export default {
           this.preparedData.inline_data.challenge_participants.push(preparedParticipant);
         });
         // Process visualization data for BarPlot
-        const visualization = data.datalink.inline_data.visualization;
+        const visualization = data.inline_data.visualization;
         this.preparedData.inline_data.visualization = {
           metric: visualization.metric,
           type: visualization.type
         };
       }else if (type === '2D-plot'){
         // Process challenge_participants data for ScatterPlot
-        data.datalink.inline_data.challenge_participants.forEach(participant => {
+        data.inline_data.challenge_participants.forEach(participant => {
           const preparedParticipant = {
             tool_id: participant.tool_id,
             metric_x: participant.metric_x,
@@ -66,13 +67,36 @@ export default {
           this.preparedData.inline_data.challenge_participants.push(preparedParticipant);
         });
         // Process visualization data for ScatterPlot
-        const visualization = data.datalink.inline_data.visualization;
+        const visualization = data.inline_data.visualization;
         // const metrics_names = await this.getMetricsNames(visualization.x_axis, visualization.y_axis);
         this.preparedData.inline_data.visualization = {
           type: visualization.type,
           x_axis: visualization.x_axis,
           y_axis: visualization.y_axis,
           optimization: visualization.optimization
+        };
+      } else if (type === 'box-plot'){
+        // Process challenge_participants data for ScatterPlot
+        data.inline_data.challenge_participants.forEach(participant => {
+          const preparedParticipant = {
+            name: participant.name,
+            metric_id: participant.metric_id,
+            q1: participant.q1,
+            mean: participant.mean,
+            median: participant.median,
+            q3: participant.q3,
+            lowerfence: participant.lowerfence,
+            upperfence: participant.upperfence
+          };
+          this.preparedData.inline_data.challenge_participants.push(preparedParticipant);
+        });
+        // Process visualization data for ScatterPlot
+        const visualization = data.inline_data.visualization;
+        // const metrics_names = await this.getMetricsNames(visualization.x_axis, visualization.y_axis);
+        this.preparedData.inline_data.visualization = {
+          type: visualization.type,
+          y_axis: visualization.y_axis,
+          optimization: visualization.optimization?visualization.optimization:null
         };
       }else{
         return null;

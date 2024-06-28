@@ -7,6 +7,7 @@ module.exports = {
         LoaderWidgets: './components/LoaderWidgets.vue',
         ScatterPlot: './components/ScatterPlot.vue',
         BarPlot: './components/BarPlot.vue',
+        BoxPlot: './components/BoxPlot.vue',
         IndexPage: './pages/index.vue',
     },
     output: {
@@ -14,7 +15,7 @@ module.exports = {
         filename: '[name].js',
         libraryTarget: 'umd',
         globalObject: 'this',
-        library: 'oeb-charts-test',
+        library: 'oeb-widgets',
     },
     module: {
       rules: [

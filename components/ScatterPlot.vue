@@ -10,21 +10,31 @@
             <!-- Dropdown for Classification -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button" :disabled="loading">
+                <v-btn outlined v-bind="attrs" v-on="on" class="button-classification custom-height-button">
                   {{classificationButtonText}}
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item class="menu-item"  @click="noClassification">
+                <v-list-item class="menu-item"  @click="noClassification"
+                :class="{ 'disabled-class': classificationDisabled }"
+                :disabled="classificationDisabled">
                   <v-list-item-title>No Classification</v-list-item-title>
                 </v-list-item >
-                <v-list-item class="menu-item" @click="toggleQuartilesVisibility">
+                <v-list-item class="menu-item" @click="toggleQuartilesVisibility" v-if="challenge_participants" 
+                  :class="{ 'disabled-class': classificationDisabled }"
+                  :disabled="classificationDisabled" >
                   <v-list-item-title>Square Quartiles</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item" @click="toggleDiagonalQuartile">
+                <v-list-item class="menu-item" @click="toggleDiagonalQuartile"
+                  v-if="challenge_participants" 
+                  :class="{ 'disabled-class': classificationDisabled }"
+                  :disabled="classificationDisabled" >
                   <v-list-item-title>Diagonal Quartiles</v-list-item-title>
                 </v-list-item>
-                <v-list-item class="menu-item" @click="toggleKmeansVisibility">
+                <v-list-item class="menu-item" @click="toggleKmeansVisibility"
+                  v-if="challenge_participants" 
+                  :class="{ 'disabled-class': classificationDisabled }"
+                  :disabled="classificationDisabled" >
                   <v-list-item-title>K-Means Clustering</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -151,6 +161,7 @@ import Plotly from 'plotly.js-dist';
 import * as statistics from 'simple-statistics';
 import CustomAlert from './CustomAlert.vue';
 import 'jspdf-autotable';
+
 // REQUIREMENTS
 var clusterMaker = require('clusters');
 const pf = require('pareto-frontier');
@@ -172,11 +183,12 @@ export default {
   },
   data() {
     return {
-      loading: false,
+      classificationDisabled: false,
       datasetId: null,
       datasetModDate: null,
       visualizationData: null,
       optimalview: null,
+      challenge_participants: null,
       formattedDate: null,
       originalData: null,
       markerColors: ['#D62728', '#FF7F0E', '#8C564B', '#E377C2', '#4981B6', '#BCBD22', '#9467BD', '#0C9E7B', '#7F7F7F', '#31B8BD', '#FB8072', '#62D353'],
@@ -229,7 +241,11 @@ export default {
       this.datasetId = await this.dataJson._id;
       this.datasetModDate = this.dataJson.dates.modification;
       this.visualizationData = data.visualization;
-      this.optimalview = data.visualization.optimization;
+      this.optimalview = data.visualization.optimization !== undefined ? data.visualization.optimization : null;
+      this.challenge_participants = data.challenge_participants
+    
+      // Toggle classification button
+      this.classificationDisabled = this.toggleClassification(this.optimalview, this.challenge_participants)
 
       // Save original data for future use
       this.originalData = this.dataJson;
@@ -250,8 +266,6 @@ export default {
 
       // Calculate Pareto frontier
       if (this.optimalview != null) {
-        // Activate classification button
-        this.loading = false;
 
         let direction = this.formatOptimalDisplay(this.optimalview);
         this.paretoPoints = pf.getParetoFrontier(this.dataPoints, { optimize: direction });
@@ -295,9 +309,6 @@ export default {
         // Add the pareto trace to the trace array
         traces.push(globalParetoTrace, dynamicParetoTrace);
       } else {
-        // Disable classification button
-        this.loading = true;
-
         const globalParetoTrace = {
           x: ['0'],
           y: ['0'],
@@ -639,6 +650,13 @@ export default {
     // CLASSIFICATIONS
     // ----------------------------------------------------------------
 
+    // ----------------------------------------------------------------
+    // TOGGLE CLASSIFICATIONS
+    // ----------------------------------------------------------------
+    toggleClassification(optimalview, challenge_participants ){
+      return optimalview === null || challenge_participants.length < 4;
+    },
+
     // NO CLASSIFICATION
     // ----------------------------------------------------------------
     noClassification(){
@@ -662,6 +680,14 @@ export default {
         if (this.optimalview != null){
           let direction = this.formatOptimalDisplay(this.optimalview);
           const newParetoPoints = pf.getParetoFrontier(updatedVisibleTools, { optimize: direction });
+          
+          // If the pareto returns only one point, we create two extra points to represent it.
+          if (newParetoPoints.length == 1) {
+            const extraPoint = [newParetoPoints[0][0], 0];
+            const extraPoint2 = [Math.max(...this.xValues), newParetoPoints[0][1]];
+            newParetoPoints.unshift(extraPoint);
+            newParetoPoints.push(extraPoint2);
+          }
 
           // Update the trace of the Pareto frontier
           const newTraces = {
@@ -1139,45 +1165,43 @@ export default {
         if (better == 'top-left'){
           if (element.score <= first_quartile) {
             element.quartile = 4;
-            poly[0].push([element[0], element[1]]);
+            poly[0].push([element[0], element[1], element.quartile]);
           } else if (element.score <= second_quartile) {
             element.quartile = 3;
-            poly[1].push([element[0], element[1]]);
+            poly[1].push([element[0], element[1], element.quartile]);
           } else if (element.score <= third_quartile) {
             element.quartile = 2;
-            poly[3].push([element[0], element[1]]);
+            poly[3].push([element[0], element[1], element.quartile]);
           } else {
             element.quartile = 1;
-            poly[2].push([element[0], element[1]]);
+            poly[2].push([element[0], element[1], element.quartile]);
           }
 
         }else{
           if (element.score <= first_quartile) {
             element.quartile = 4;
-            poly[0].push([element[0], element[1]]);
+            poly[0].push([element[0], element[1], element.quartile]);
           } else if (element.score <= second_quartile) {
             element.quartile = 3;
-            poly[1].push([element[0], element[1]]);
+            poly[1].push([element[0], element[1], element.quartile]);
           } else if (element.score <= third_quartile) {
             element.quartile = 2;
-            poly[2].push([element[0], element[1]]);
+            poly[2].push([element[0], element[1], element.quartile]);
           } else {
             element.quartile = 1;
-            poly[3].push([element[0], element[1]]);
+            poly[3].push([element[0], element[1], element.quartile]);
           }
         }
-          
         
-
       });
 
-      let i = 4;
       let annotationDiagonal = []
       poly.forEach((group) => {
         let center = (this.getCentroid(group))
         const centroidX = center[0];
         const centroidY = center[1];
-        
+        const quartile = group[0][2];        
+      
         let annotationD = {
           xref: 'x',
           yref: 'y',
@@ -1185,7 +1209,7 @@ export default {
           xanchor: 'right',
           y: centroidY,
           yanchor: 'bottom',
-          text: i,
+          text: quartile,
           showarrow: false,
           font: {
             size: 30,
@@ -1194,7 +1218,6 @@ export default {
         }
         
         annotationDiagonal.push(annotationD)
-        i--;
       });
       return annotationDiagonal
     },
@@ -1641,7 +1664,7 @@ export default {
         yref: "paper",
         xanchor: "right",
         yanchor: "bottom",
-        "opacity": 0,
+        "opacity": 1,
       }
 
       ImagePositions.push(imagesPosition)
