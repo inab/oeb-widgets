@@ -1,6 +1,6 @@
 {
   "name": "@inb/oeb-widgets",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Collection of visualisers for benchmarking.",
   "main": "dist/index.js",
   "scripts": {
