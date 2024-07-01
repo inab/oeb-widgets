@@ -7,7 +7,7 @@
     "community_ids": [
         "OEBC007"
     ],
-    "datalink": {
+
         "inline_data": {
             "challenge_participants": [
                 {
@@ -71,7 +71,6 @@
                     "dataset_orig_id": "APAeval:Identification_2021:GTEXsim_cerebellum_R1.all.hg38_v26:TAPAS_P"
                 }
             ]
-        }
     },
     "dataset_contact_ids": [
         "Christina.J.Herrmann",
