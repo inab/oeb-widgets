@@ -15,7 +15,7 @@ export default {
   },
   async mounted() {
     // Fetch your data
-    const response = await fetch('./OEBD00700000NI.json');
+    const response = await fetch('./OEBD00200002UK.json');
     this.fetchedData = await response.json();
     this.fetchDataAndRender(this.fetchedData)
 

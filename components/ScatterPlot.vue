@@ -1724,17 +1724,22 @@ export default {
           link.click();
           document.body.removeChild(link);
         } else {
-          const options = { format, height: 700, width: 800 };
-          Plotly.toImage(chart, options)
-            .then((url) => {
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `benchmarking_chart_${datasetId}.${format}`;
-              link.click();
-            })
-            .catch((error) => {
-              console.error(`Error downloading graphic as ${format}`, error);
-            });
+          const toDownloadDiv =  document.getElementById('scatterPlot');
+          const downloadCanvas = await html2canvas(toDownloadDiv, {
+            scrollX: 0,
+            scrollY: 0,
+            width: toDownloadDiv.offsetWidth,
+            height: toDownloadDiv.offsetHeight,
+          });
+
+          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+
+          const link = document.createElement('a');
+          link.href = downloadImage;
+          link.download = `benchmarking_chart_${datasetId}.${format}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         }
 
       } else if (format === 'svg') {
