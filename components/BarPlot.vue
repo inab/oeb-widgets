@@ -47,7 +47,7 @@
 
     <v-row class="mt-4" id="todownload" :class="{ 'centered-download': isDownloading }">
       <!-- Chart -->
-      <v-col :cols="isDownloading ? 8 : 8"  class="d-flex justify-center" id="chartCapture">
+      <v-col :cols="isDownloading ? 8 : 8"  class="justify-center" id="chartCapture">
         <div ref="chart" id="barPlot"></div>
         <br>
         <!-- ID AND DATE TABLE -->
