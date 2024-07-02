@@ -87,7 +87,7 @@ Scatter plot muestra los resultados de experimentos científicos de evaluación 
 ![Diagonal quartiles.](https://github.com/inab/oeb-widgets/blob/main/static/widgetsPicture/scatter-diagonal.png)
 
 * Clustering - group the participants using the K-means clustering algorithm and sort the clusters according to the performance.
-![Clustering.](https://github.com/inab/oeb-widgets/blob/main/static/widgetsPicture/BoxPlot.png)
+![Clustering.](https://github.com/inab/oeb-widgets/blob/main/static/widgetsPicture/scatter-cluster.png)
 
 #### Example Data Structure for Scatter Plot
 
