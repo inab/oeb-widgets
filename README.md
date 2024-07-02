@@ -40,7 +40,7 @@ Bar plot shows the results of a benchmarking challenge that uses one single eval
 
 The results of this plot format can be transformed into a tabular format by sorting the participants in descending/ascending order according to their metrics and applying a quartile classification over that linear set of values. This classification splits the participants into four different groups/clusters depending on their performance. Clusters are separated in the plot with vertical lines and shown in the right table together with a green color-scale, which is easier to interpret for both experts and non-expert users.
 
-![This is an alt text.](https://github.com/inab/oeb-widgets/blob/oeb-charts-package/static/widgetsPicture/Barplot.png)
+![This is an alt text.](https://github.com/inab/oeb-widgets/blob/main/static/widgetsPicture/Barplot.png)
 
 #### Example Data Structure in Bar Plot
 
@@ -80,14 +80,14 @@ Scatter plot muestra los resultados de experimentos científicos de evaluación 
 
 * Square quartiles - divide the plotting area in four squares by getting the 2nd quartile of the X and Y metrics.
 
-![Square quartiles.](https://github.com/inab/oeb-widgets/blob/oeb-charts-package/static/widgetsPicture/scatter-square.png )
+![Square quartiles.](https://github.com/inab/oeb-widgets/blob/main/static/widgetsPicture/scatter-square.png)
 
 * Diagonal quartiles - divide the plotting area with diagonal lines by assigning a score to each participant based in the distance to the 'optimal performance'.
 
-![Diagonal quartiles.](https://github.com/inab/oeb-widgets/blob/oeb-charts-package/static/widgetsPicture/scatter-diagonal.png  )
+![Diagonal quartiles.](https://github.com/inab/oeb-widgets/blob/main/static/widgetsPicture/scatter-diagonal.png)
 
 * Clustering - group the participants using the K-means clustering algorithm and sort the clusters according to the performance.
-![Clustering.](https://github.com/inab/oeb-widgets/blob/oeb-charts-package/static/widgetsPicture/scatter-square.png )
+![Clustering.](https://github.com/inab/oeb-widgets/blob/main/static/widgetsPicture/BoxPlot.png)
 
 #### Example Data Structure for Scatter Plot
 
