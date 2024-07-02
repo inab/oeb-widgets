@@ -74,8 +74,8 @@
       </v-col>
     </v-row>
 
-    <v-row id="todownload">
-      <v-col cols="8">
+    <v-row id="todownload" :class="{ 'centered-download': isDownloading }">
+      <v-col :cols="isDownloading ? 8 : 8" class="d-flex justify-center">
         <!-- CHART -->
         <div ref="chart" id="scatterPlot"></div>
         
@@ -104,7 +104,7 @@
       </v-col>
 
       <!-- Table -->
-      <v-col cols="4" class="content-table">
+      <v-col :cols="isDownloading ? 8 : 4" class="content-table d-flex justify-center">
         <transition name="fade">
           <v-simple-table class="tools-table" height="800px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
             <thead>
@@ -183,6 +183,7 @@ export default {
   },
   data() {
     return {
+      isDownloading: false,
       classificationDisabled: false,
       datasetId: null,
       datasetModDate: null,
@@ -1696,6 +1697,15 @@ export default {
 
       if (format === 'png') {
         if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
+          this.isDownloading = true;
+
+          // Esperar a que Vue actualice el DOM
+          await this.$nextTick();
+
+          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+
           const toDownloadDiv = document.getElementById('todownload');
 
           const table = document.getElementById('benchmarkingTable');
@@ -1723,6 +1733,8 @@ export default {
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
+          this.isDownloading = false;
+
         } else {
           const toDownloadDiv =  document.getElementById('scatterPlot');
           const downloadCanvas = await html2canvas(toDownloadDiv, {
@@ -1741,7 +1753,6 @@ export default {
           link.click();
           document.body.removeChild(link);
         }
-
       } else if (format === 'svg') {
         const options = { format, height: 700, width: 800 };
         Plotly.toImage(chart, options)
@@ -2015,8 +2026,9 @@ export default {
 }
 
 .info-table{
-  margin-right: 30px;
+  margin-right: 20px;
   margin-top: 1rem;
+  margin-left: 20px;
 }
 
 /* Table data */
@@ -2064,6 +2076,7 @@ font-size: 16px !important;
   width: 100%;
   border-collapse: collapse;
   margin-left: 20px;
+  margin-right: 20px;
 }
 
 .tools-table th{
@@ -2166,4 +2179,23 @@ font-size: 16px !important;
 .quartile-message{
   width: 195px;
 }
+
+/* styles for when to download the chart and table */
+.centered-download {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.centered-download .v-col {
+  display: flex;
+  justify-content: center;
+}
+
+.centered-download #scatterPlot, 
+.centered-download #benchmarkingTable {
+  width: 100%;
+}
+
+
 </style>
