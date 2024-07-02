@@ -74,8 +74,8 @@
       </v-col>
     </v-row>
 
-    <v-row id="todownload">
-      <v-col cols="8">
+    <v-row id="todownload" :class="{ 'centered-download': isDownloading }">
+      <v-col :cols="isDownloading ? 8 : 8" class="d-flex justify-center" id="chartCapture">
         <!-- CHART -->
         <div ref="chart" id="scatterPlot"></div>
         
@@ -104,7 +104,7 @@
       </v-col>
 
       <!-- Table -->
-      <v-col cols="4" class="content-table">
+      <v-col :cols="isDownloading ? 8 : 4">
         <transition name="fade">
           <v-simple-table class="tools-table" height="800px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
             <thead>
@@ -183,6 +183,7 @@ export default {
   },
   data() {
     return {
+      isDownloading: false,
       classificationDisabled: false,
       datasetId: null,
       datasetModDate: null,
@@ -413,6 +414,7 @@ export default {
           font: {
             size: 18,
           },
+          itemdoubleclick: "toggle",
         },
         // plot_bgcolor: '#F8F9F9',
         images: this.getImagePosition(this.optimalview),
@@ -1696,6 +1698,12 @@ export default {
 
       if (format === 'png') {
         if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
+          this.isDownloading = true;
+          // Esperar a que Vue actualice el DOM
+          await this.$nextTick();
+          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+          await new Promise(resolve => setTimeout(resolve, 500));
+
           const toDownloadDiv = document.getElementById('todownload');
 
           const table = document.getElementById('benchmarkingTable');
@@ -1723,20 +1731,26 @@ export default {
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-        } else {
-          const options = { format, height: 700, width: 800 };
-          Plotly.toImage(chart, options)
-            .then((url) => {
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `benchmarking_chart_${datasetId}.${format}`;
-              link.click();
-            })
-            .catch((error) => {
-              console.error(`Error downloading graphic as ${format}`, error);
-            });
-        }
+          this.isDownloading = false;
 
+        } else {
+          const toDownloadDiv =  document.getElementById('chartCapture');
+          const downloadCanvas = await html2canvas(toDownloadDiv, {
+            scrollX: 0,
+            scrollY: 0,
+            width: toDownloadDiv.offsetWidth,
+            height: toDownloadDiv.offsetHeight,
+          });
+
+          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+
+          const link = document.createElement('a');
+          link.href = downloadImage;
+          link.download = `benchmarking_chart_${datasetId}.${format}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
       } else if (format === 'svg') {
         const options = { format, height: 700, width: 800 };
         Plotly.toImage(chart, options)
@@ -1758,69 +1772,91 @@ export default {
         pdf.setFont(undefined, 'bold');
         pdf.text(`Benchmarking Results of ${this.datasetId} at ${this.formatDateString(this.datasetModDate)}`, 105, 10, null, null, 'center');
 
-        // Get chart image as base64 data URI
-        const chartImageURI = await Plotly.toImage(document.getElementById('scatterPlot'), { format: 'png', width: 750, height: 600 });
-        pdf.addImage(chartImageURI, 'PNG', 10, 20);
-
         if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
-          const columns = ["Participants", this.viewKmeans ? "Clusters" : "Quartile"];
-          
-          // Extract data from quartileDataArray
-          const rows = this.tableData.map(q => [q.tool_id, q.label,]);
-          const quantileNumber = this.tableData.map(q => q.cuartil);
-          const markerColors = ['#D62728', '#FF7F0E', '#8C564B', '#E377C2', '#4981B6', '#BCBD22', '#9467BD', '#0C9E7B', '#7F7F7F', '#31B8BD', '#FB8072', '#62D353']
+          this.isDownloading = true;
+          // Esperar a que Vue actualice el DOM
+          await this.$nextTick();
+          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+          await new Promise(resolve => setTimeout(resolve, 500));
 
+          const toDownloadDiv = document.getElementById('todownload');
 
-          // Generate autoTable with custom styles
-          pdf.autoTable({
-              head: [columns],
-              body: rows,
-              startY: 190,
-              theme: 'grid',
-              tableWidth: 'auto',
-              styles: {
-                cellPadding: 1,
-                fontSize: 8,
-                overflow: 'linebreak',
-                halign: 'left',
-              },
-              headStyles: {
-                fillColor: [108, 117, 125]
-              },
-              willDrawCell: function (data) {
+          const table = document.getElementById('benchmarkingTable');
+          const innerDiv = table.querySelector('div[style*="height"]');
+          const originalHeight = innerDiv.style.height;
 
-                if (data.row.section === 'body') {
-                  // Check if the column header matches 'Quartile'
-                  if (data.column.dataKey === 1) {
-                    // Access the raw value of the cell
-                    const rowIndex = data.row.index;
-                    const quartileValue = quantileNumber[rowIndex];
-                   // Set fill color based on quartile value
-                   if (quartileValue === 1) {
-                      pdf.setFillColor(237, 248, 233)
-                    } else if (quartileValue === 2) {
-                      pdf.setFillColor(186, 228, 179)
-                    } else if (quartileValue === 3) {
-                      pdf.setFillColor(116, 196, 118)
-                    } else if (quartileValue === 4) {
-                      pdf.setFillColor(35, 139, 69)
-                    }
-                  }else if (data.column.dataKey === 0) {
-                    // Draw colored "div" in Tool column
-                    const rowIndex = data.row.index;
-                    const color = markerColors[rowIndex % markerColors.length];
-                    pdf.setFillColor(color);
+          // Remove the height style
+          innerDiv.style.height = '';
+          const downloadCanvas = await html2canvas(toDownloadDiv, {
+            scrollX: 0,
+            scrollY: 0,
+            width: toDownloadDiv.offsetWidth,
+            height: toDownloadDiv.offsetHeight,
+          });
 
-                    // Dibuja el rectángulo coloreado
-                    pdf.rect(data.cell.x -2, data.cell.y, 10, data.cell.height, 'F');
-                    // Restaura el color de relleno original
-                    pdf.setFillColor(255, 255, 255);
+          // Restore the height style
+          innerDiv.style.height = originalHeight;
 
-                  }
+          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
 
-                } 
-              },
-            });
+          // Get the width and height of the image in pixels
+          const imgWidth = downloadCanvas.width;
+          const imgHeight = downloadCanvas.height;
+
+          // Get the size of the PDF page in mm
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+
+          // Calculate the scaling factor to fit the image within the page
+          const scaleX = pageWidth / imgWidth;
+          const scaleY = pageHeight / imgHeight;
+          let scale = Math.min(scaleX, scaleY);
+
+          scale *= 1.3;
+
+          // Calculate the new width and height of the image in mm
+          const scaledWidth = imgWidth * scale;
+          const scaledHeight = imgHeight * scale;
+
+          // Center the image on the page
+          const xOffset = (pageWidth - scaledWidth) / 2;
+          const yOffset = 20; // Adjust this value to position the image vertically as needed
+
+          pdf.addImage(downloadImage, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
+          this.isDownloading = false;
+
+        }else{
+          // Get chart image as base64 data URI
+          const toDownloadDiv =  document.getElementById('chartCapture');
+          const downloadCanvas = await html2canvas(toDownloadDiv, {
+            scrollX: 0,
+            scrollY: 0,
+            width: toDownloadDiv.offsetWidth,
+            height: toDownloadDiv.offsetHeight,
+          });
+
+          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+          // Get the width and height of the image in pixels
+          const imgWidth = downloadCanvas.width;
+          const imgHeight = downloadCanvas.height;
+
+          // Get the size of the PDF page in mm
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+
+          // Calculate the scaling factor to fit the image within the page
+          const scaleX = pageWidth / imgWidth;
+          const scaleY = pageHeight / imgHeight;
+          const scale = Math.min(scaleX, scaleY);
+
+          // Calculate the new width and height of the image in mm
+          const scaledWidth = imgWidth * scale;
+          const scaledHeight = imgHeight * scale;
+
+          // Center the image on the page
+          const xOffset = (pageWidth - scaledWidth) / 2;
+          const yOffset = 20; // Adjust this value to position the image vertically as needed
+          pdf.addImage(downloadImage, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
         }
 
         // Save the PDF
@@ -2010,8 +2046,9 @@ export default {
 }
 
 .info-table{
-  margin-right: 30px;
+  margin-right: 20px;
   margin-top: 1rem;
+  margin-left: 20px;
 }
 
 /* Table data */
@@ -2059,6 +2096,7 @@ font-size: 16px !important;
   width: 100%;
   border-collapse: collapse;
   margin-left: 20px;
+  margin-right: 20px;
 }
 
 .tools-table th{
@@ -2161,4 +2199,23 @@ font-size: 16px !important;
 .quartile-message{
   width: 195px;
 }
+
+/* styles for when to download the chart and table */
+.centered-download {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.centered-download .v-col {
+  display: flex;
+  justify-content: center;
+}
+
+.centered-download #scatterPlot, 
+.centered-download #benchmarkingTable {
+  width: 100%;
+}
+
+
 </style>
