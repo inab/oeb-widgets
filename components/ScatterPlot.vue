@@ -75,7 +75,7 @@
     </v-row>
 
     <v-row id="todownload" :class="{ 'centered-download': isDownloading }">
-      <v-col :cols="isDownloading ? 8 : 8" class="d-flex justify-center" id="chartCapture">
+      <v-col :cols="isDownloading ? 8 : 8" class="justify-center" id="chartCapture">
         <!-- CHART -->
         <div ref="chart" id="scatterPlot"></div>
         
