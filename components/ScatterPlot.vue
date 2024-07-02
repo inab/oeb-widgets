@@ -414,6 +414,7 @@ export default {
           font: {
             size: 18,
           },
+          itemdoubleclick: "toggle",
         },
         // plot_bgcolor: '#F8F9F9',
         images: this.getImagePosition(this.optimalview),
