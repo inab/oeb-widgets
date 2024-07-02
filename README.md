@@ -127,3 +127,44 @@ Scatter plot muestra los resultados de experimentos científicos de evaluación 
 }
 
 ```
+
+## Box Plot
+
+Box plot shiw the results of a benchmarking challenge that uses a graphical representation of the distribution of a dataset on a seven-number summary of datapoints. The challenge metrics is represented in Y axis by default.
+
+#### Classification
+
+The result of the plot can be ordened by maximum or minimum median value.
+
+#### Example Data Structure in Box Plot
+
+```json
+{
+  "_id": "OEBD003000002S",
+  "dates": {
+    "modification": "2024-04-05T14:00:00Z"
+  },
+  "dataset_contact_ids": ["Name.Lastname"],
+  "inline_data": {
+    "challenge_participants": [
+      {
+        "name": "rnaSPAdes 2",
+        "metric_id": "length of transcripts",
+        "q1": 4.028134794028789,
+        "mean": 4.6573958631434174,
+        "median": 4.574031267727719,
+        "q3": 4.92020145948564,
+        "lowerfence": 3.8400347958435121,
+        "upperfence": 5.408301457670917
+      },
+    ],
+    "visualization": {
+      "type": "box-plot",
+      "y_axis": "length of transcripts",
+      "optimization": "minimum"
+    }
+  }
+}
+
+```
+![This is an alt text.](https://github.com/inab/oeb-widgets/blob/oeb-widget/static/widgetsPicture/BoxPlot.png)
