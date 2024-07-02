@@ -167,4 +167,4 @@ The result of the plot can be ordened by maximum or minimum median value.
 }
 
 ```
-![This is an alt text.](https://github.com/inab/oeb-widgets/blob/oeb-widget/static/widgetsPicture/BoxPlot.png)
+![This is an alt text.](https://github.com/inab/oeb-widgets/blob/main/static/widgetsPicture/BoxPlot.png)
