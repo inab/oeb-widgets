@@ -45,9 +45,9 @@
       </v-col>
     </v-row>
 
-    <v-row class="mt-4" id="todownload">
+    <v-row class="mt-4" id="todownload" :class="{ 'centered-download': isDownloading }">
       <!-- Chart -->
-      <v-col cols="8" id="chartCapture">
+      <v-col :cols="isDownloading ? 8 : 8"  class="d-flex justify-center" id="chartCapture">
         <div ref="chart" id="barPlot"></div>
         <br>
         <!-- ID AND DATE TABLE -->
@@ -66,7 +66,7 @@
       </v-col>
 
       <!-- Quartile Table -->
-      <v-col cols="4" id="quartileCapture" v-if="sortOrder === 'sorted' && Object.keys(quartileData).length > 1">
+      <v-col :cols="isDownloading ? 8 : 4" id="quartileCapture" v-if="sortOrder === 'sorted' && Object.keys(quartileData).length > 1">
         <v-simple-table class="tools-table" height="800px" fixed-header
           :class="{ 'fade-in': sortOrder === 'sorted', 'fade-out': sortOrder === 'raw' }" id='quartileTable'>
 
@@ -122,6 +122,7 @@ export default {
   },
   data() {
     return {
+      isDownloading: false,
       loading: false,
       datasetId: null,
       datasetModDate: null,
@@ -133,7 +134,6 @@ export default {
       optimal: 'no',
       showAdditionalTable: false,
       quartileData: {},
-      showAdditionalTable: false,
       icon: 'info',
 
     };
@@ -704,12 +704,12 @@ export default {
     // ----------------------------------------------------------------
 
     async downloadChart(format) {
-      console.log('Downloading chart as', format);
       try {
+        // Show watermark
+        this.layout.images[0].opacity = 0.5;
+        Plotly.relayout(this.$refs.chart, this.layout);
         if (format === 'pdf') {
           const pdf = new jsPDF();
-          this.layout.images[0].opacity = 0.5;
-          Plotly.relayout(this.$refs.chart, this.layout);
 
           pdf.setFontSize(12);
           pdf.setFont(undefined, 'bold');
@@ -765,83 +765,62 @@ export default {
             });
             // Save the PDF
             pdf.save(`benchmarking_chart__quartiles_${this.datasetId}.${format}`);
-            this.layout.images[0].opacity = 0;
-            Plotly.relayout(this.$refs.chart, this.layout);
           } else {
             // Save the PDF
             pdf.save(`benchmarking_chart_${this.datasetId}.${format}`);
-            this.layout.images[0].opacity = 0;
-            Plotly.relayout(this.$refs.chart, this.layout);
           }
 
 
         } else if (format === 'svg') {
 
-          this.layout.images[0].opacity = 0.5;
-          Plotly.relayout(this.$refs.chart, this.layout);
           const graphDiv = document.getElementById('barPlot')
           Plotly.downloadImage(graphDiv, { format: 'svg', width: 800, height: 600, filename: `benchmarking_chart_${this.datasetId}` });
-          this.layout.images[0].opacity = 0;
-          Plotly.relayout(this.$refs.chart, this.layout);
 
         } else {
+          // Download chart with table
+          if (this.sortOrder === 'sorted' && Object.keys(this.quartileData).length > 1) {
+            this.isDownloading = true;
+            await this.$nextTick();
+            // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-          this.layout.images[0].opacity = 0.5;
-          Plotly.relayout(this.$refs.chart, this.layout);
+            const toDownloadDiv = document.getElementById('todownload');
 
-          const toDownloadChart = document.getElementById('chartCapture');
-          const downloadChart = await html2canvas(toDownloadChart, {
-            scrollX: 0,
-            scrollY: 0,
-            width: toDownloadChart.offsetWidth,
-            height: toDownloadChart.offsetHeight,
-          });
-
-          if (this.showAdditionalTable) {
-            const element = document.getElementById('quartileCapture');
             const table = document.getElementById('quartileTable');
-
             const innerDiv = table.querySelector('div[style*="height"]');
             const originalHeight = innerDiv.style.height;
 
-
             // Remove the height style
             innerDiv.style.height = '';
-            element.style.opcity = 1
-            table.style.opacity = 1
 
-            const downloadTable = await html2canvas(table, {
+            const downloadCanvas = await html2canvas(toDownloadDiv, {
               scrollX: 0,
               scrollY: 0,
-              width: table.offsetWidth,
-              height: table.offsetHeight,
+              width: toDownloadDiv.offsetWidth,
+              height: toDownloadDiv.offsetHeight,
             });
 
             // Restore the height style
             innerDiv.style.height = originalHeight;
 
-            const chartDownloadImage = downloadChart.toDataURL(`image/${format}`);
-            const tableDownloadImage = downloadTable.toDataURL(`image/${format}`);
-            const chartLink = document.createElement('a');
-            const tableLink = document.createElement('a');
-            chartLink.href = chartDownloadImage;
-            tableLink.href = tableDownloadImage;
-            chartLink.download = `benchmarking_chart__quartiles_chart_${this.datasetId}.${format}`;
-            tableLink.download = `benchmarking_chart__quartiles_table_${this.datasetId}.${format}`;
+            const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
 
-            // Append links to the document
-            document.body.appendChild(chartLink);
-            document.body.appendChild(tableLink);
-
-            // Trigger the download
-            chartLink.click();
-            tableLink.click();
-
-            // Remove links from the document
-            document.body.removeChild(chartLink);
-            document.body.removeChild(tableLink);
-
+            const link = document.createElement('a');
+            link.href = downloadImage;
+            link.download = `benchmarking_chart_${this.datasetId}.${format}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            this.isDownloading = false;
           } else {
+
+            const toDownloadChart = document.getElementById('chartCapture');
+            const downloadChart = await html2canvas(toDownloadChart, {
+              scrollX: 0,
+              scrollY: 0,
+              width: toDownloadChart.offsetWidth,
+              height: toDownloadChart.offsetHeight,
+            });
             const chartDownloadImage = downloadChart.toDataURL(`image/${format}`);
             const chartLink = document.createElement('a');
             chartLink.href = chartDownloadImage;
@@ -850,10 +829,11 @@ export default {
             chartLink.click();
             document.body.removeChild(chartLink);
           }
-
-          this.layout.images[0].opacity = 0;
-          Plotly.relayout(this.$refs.chart, this.layout);
         }
+
+        // Hide watermark
+        this.layout.images[0].opacity = 0;
+        Plotly.relayout(this.$refs.chart, this.layout);
 
       } catch (error) {
         console.error('Error downloading chart:', error);
@@ -1116,5 +1096,22 @@ export default {
 
 .fade-out {
   animation: fadeOut 0.5s ease-in-out;
+}
+
+/* styles for when to download the chart and table */
+.centered-download {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.centered-download .v-col {
+  display: flex;
+  justify-content: center;
+}
+
+.centered-download #barPlot, 
+.centered-download #quartileTable {
+  width: 100%;
 }
 </style>
