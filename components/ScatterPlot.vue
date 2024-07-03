@@ -40,9 +40,14 @@
               </v-list>
             </v-menu>
 
-            <!-- Reset View / Optimal view -->
-            <v-btn @click="toggleView" outlined class="button-resetView custom-height-button">
+            <!-- Original View / Optimal view -->
+            <v-btn @click="toggleView" outlined class="button-originalView custom-height-button">
               {{ viewButtonText }}
+            </v-btn>
+
+            <!-- Reset View -->
+            <v-btn @click="noClassification" outlined class="button-originalView custom-height-button">
+              Reset to All
             </v-btn>
 
             <!-- Dropdown for Download -->
@@ -69,6 +74,7 @@
               </v-list>
             </v-menu>
             <!-- End of Dropdown for Download -->
+            
           </v-btn-toggle>
         </div>
       </v-col>
@@ -1478,7 +1484,7 @@ export default {
       if (this.viewApplied) {
         this.optimalView();
       } else {
-        this.resetView();
+        this.originalView();
       }
     },
     // Optimal View (Optimal dimensions)
@@ -1512,8 +1518,8 @@ export default {
       Plotly.relayout(this.$refs.chart, layout);
       this.viewApplied = false; // Optimal view is applied
     },
-    // Reset View (Real dimensions)
-    resetView() {
+    // Original View (Real dimensions)
+    originalView() {
       const layout = {
         xaxis: {
           range: [0, Math.max(...this.xValues) + (Math.min(...this.xValues) / 3)],
@@ -1883,7 +1889,7 @@ export default {
   computed: {
     // Text for the View Button
     viewButtonText() {
-      return this.viewApplied ? 'Optimal View' : 'Reset View';
+      return this.viewApplied ? 'Optimal View' : 'Original View';
     },
     // Text for the Classification Button
     classificationButtonText() {
@@ -1938,7 +1944,7 @@ export default {
   font-size: 17px !important;
   text-transform: capitalize;
 }
-.button-resetView {
+.button-originalView {
   width: 140px;
   font-size: 16px !important;
   text-transform: capitalize;
@@ -1959,7 +1965,7 @@ export default {
     font-size: 14px !important;
   }
 
-  .button-resetView {
+  .button-originalView {
     width: 120px;
     font-size: 14px !important;
   }
@@ -1981,7 +1987,7 @@ export default {
     font-size: 12px !important;
   }
 
-  .button-resetView {
+  .button-originalView {
     width: 100px;
     font-size: 12px !important;
   }
@@ -2003,7 +2009,7 @@ export default {
     font-size: 10px !important;
   }
 
-  .button-resetView {
+  .button-originalView {
     width: 80px;
     font-size: 10px !important;
   }
@@ -2021,7 +2027,7 @@ export default {
 
 @media (max-width: 300px) {
   .button-classification,
-  .button-resetView,
+  .button-originalView,
   .button-download {
     width: 100%;
     font-size: 8px !important;
