@@ -16,8 +16,8 @@
               :disabled="loading">
               Optimal View
             </v-btn>
-            <v-btn class="button-resetView custom-height-button" v-else :disabled="loading" @click="optimalView">Reset
-              view</v-btn>
+            <v-btn class="button-resetView custom-height-button" v-else :disabled="loading" @click="optimalView">
+              Original View</v-btn>
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }" >
