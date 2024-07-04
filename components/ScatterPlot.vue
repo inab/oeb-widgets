@@ -47,7 +47,7 @@
 
             <!-- Reset View -->
             <v-btn @click="noClassification" outlined class="button-originalView custom-height-button">
-              Reset to All
+              Reset Chart
             </v-btn>
 
             <!-- Dropdown for Download -->
