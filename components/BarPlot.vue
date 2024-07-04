@@ -47,10 +47,50 @@
 
     <v-row class="mt-4" id="todownload" :class="{ 'centered-download': isDownloading }">
       <!-- Chart -->
-      <v-col :cols="isDownloading ? 8 : 8"  class="justify-center" id="chartCapture">
+      <div :class="[sorted ? 'col-8' : 'col-12']"  class="justify-center" id="chartCapture">
         <div ref="chart" id="barPlot"></div>
         <br>
-        <!-- ID AND DATE TABLE -->
+        
+      </div>
+
+      <!-- Quartile Table -->
+      <div class="col-4" v-if="sorted">
+        <transition name="fade">
+          <v-simple-table class="tools-table" height="800px" fixed-header 
+          v-if="sortOrder === 'sorted' && Object.keys(quartileData).length > 1" id='quartileTable'>
+            <thead>
+              <tr>
+                <th class="tools-th">Participants</th>
+                <th class="classify-th">Quartile
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <i class="material-icons custom-alert-icon" v-bind="attrs" v-on="on">
+                        info
+                      </i>
+                    </template>
+                    <div class="quartile-message">
+                      <p><b>The Square quartile label</b></p>
+                      <p>By default, the highest values will be displayed in the first quartile.
+                        Inversely if it is specified.</p>
+                    </div>
+                  </v-tooltip>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(quartile, index) in quartileDataArray" :key="index">
+                <td>{{ quartile.tool }}</td>
+                <td :style="{ backgroundColor: quartile.quartile.bgColor }">{{ quartile.quartile.quartile }}
+                </td>
+              </tr>
+            </tbody>
+          </v-simple-table>
+        </transition>
+      </div>
+
+
+      <!-- ID AND DATE TABLE -->
+      <div :class="isDownloading ? 'col-8' : 'col-12'">
         <div class="info-table">
           <v-simple-table class="custom-table" v-if="datasetModDate">
           <tbody>
@@ -63,41 +103,7 @@
           </tbody>
           </v-simple-table>
         </div>
-      </v-col>
-
-      <!-- Quartile Table -->
-      <v-col :cols="isDownloading ? 8 : 4" id="quartileCapture" v-if="sortOrder === 'sorted' && Object.keys(quartileData).length > 1">
-        <v-simple-table class="tools-table" height="800px" fixed-header
-          :class="{ 'fade-in': sortOrder === 'sorted', 'fade-out': sortOrder === 'raw' }" id='quartileTable'>
-
-          <thead>
-            <tr>
-              <th class="tools-th">Participants</th>
-              <th class="classify-th">Quartile
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <i class="material-icons custom-alert-icon" v-bind="attrs" v-on="on">
-                      info
-                    </i>
-                  </template>
-                  <div class="quartile-message">
-                    <p><b>The Square quartile label</b></p>
-                    <p>By default, the highest values will be displayed in the first quartile.
-                      Inversely if it is specified.</p>
-                  </div>
-                </v-tooltip>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(quartile, index) in quartileDataArray" :key="index">
-              <td>{{ quartile.tool }}</td>
-              <td :style="{ backgroundColor: quartile.quartile.bgColor }">{{ quartile.quartile.quartile }}
-              </td>
-            </tr>
-          </tbody>
-        </v-simple-table>
-      </v-col>
+      </div>
     </v-row>
   </v-container>
 </template>
@@ -122,6 +128,7 @@ export default {
   },
   data() {
     return {
+      sorted: false,
       isDownloading: false,
       loading: false,
       datasetId: null,
@@ -421,9 +428,14 @@ export default {
 
     // Sort and order view
     // ----------------------------------------------------------------
-    toggleSortOrder() {
+    async toggleSortOrder() {
       try {
         if (this.sortOrder === 'raw') {
+          this.sorted = true;
+          Plotly.Plots.resize(this.$refs.chart);
+          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+          await new Promise(resolve => setTimeout(resolve, 100));
+
           this.showAdditionalTable = !this.showAdditionalTable;
           // Sort logic (descending order)
           const sortedData = this.originalData.challenge_participants.slice().sort((a, b) => b.metric_value - a.metric_value);
@@ -431,6 +443,8 @@ export default {
           this.updateChart(sortedData);
           // Call the animateBars function after updating the chart
           this.animateBars(sortedData);
+
+
           // Calculate quartiles and update the table data
           this.quartileData = this.calculateQuartiles(sortedData);
 
@@ -441,10 +455,17 @@ export default {
           this.addQuartileLabels();
 
         } else {
+          this.sorted = false;
+          Plotly.Plots.resize(this.$refs.chart);
+
+          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+          await new Promise(resolve => setTimeout(resolve, 100));
+
           // Return to raw data
           this.updateChart(this.originalData.challenge_participants);
           // Call the animateBars function after updating the chart
           this.animateBars(this.originalData.challenge_participants);
+          
           this.quartileData = {};
 
           // Remove lines between quartile groups
@@ -452,6 +473,8 @@ export default {
 
           // Clear quartile labels
           this.clearQuartileLabels();
+
+          
         }
 
         // Toggle sortOrder

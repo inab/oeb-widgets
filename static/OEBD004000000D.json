@@ -7,65 +7,63 @@
     "community_ids": [
         "OEBC004"
     ],
-    "datalink": {
-        "inline_data": {
-            "challenge_participants": [
-                {
-                    "metric_value": 0.932,
-                    "tool_id": "group12"
-                },
-                {
-                    "metric_value": 0.9279,
-                    "tool_id": "group02"
-                },
-                {
-                    "metric_value": 0.9013,
-                    "tool_id": "group06"
-                },
-                {
-                    "metric_value": 0.9338,
-                    "tool_id": "group04"
-                },
-                {
-                    "metric_value": 0.936,
-                    "tool_id": "group01"
-                },
-                {
-                    "metric_value": 0.922,
-                    "tool_id": "group07"
-                },
-                {
-                    "metric_value": 0.9047,
-                    "tool_id": "group09"
-                },
-                {
-                    "metric_value": 0.9111,
-                    "tool_id": "group08"
-                },
-                {
-                    "metric_value": 0.9257,
-                    "tool_id": "group11"
-                },
-                {
-                    "metric_value": 0.9215,
-                    "tool_id": "group03"
-                },
-                {
-                    "metric_value": 0.9031,
-                    "tool_id": "group05"
-                },
-                {
-                    "metric_value": 0.8641,
-                    "tool_id": "group10"
-                }
-            ],
-            "visualization": {
-                "metric": "F-Measure",
-                "type": "bar-plot"
+    "inline_data": {
+        "challenge_participants": [
+            {
+                "metric_value": 0.932,
+                "tool_id": "group12"
+            },
+            {
+                "metric_value": 0.9279,
+                "tool_id": "group02"
+            },
+            {
+                "metric_value": 0.9013,
+                "tool_id": "group06"
+            },
+            {
+                "metric_value": 0.9338,
+                "tool_id": "group04"
+            },
+            {
+                "metric_value": 0.936,
+                "tool_id": "group01"
+            },
+            {
+                "metric_value": 0.922,
+                "tool_id": "group07"
+            },
+            {
+                "metric_value": 0.9047,
+                "tool_id": "group09"
+            },
+            {
+                "metric_value": 0.9111,
+                "tool_id": "group08"
+            },
+            {
+                "metric_value": 0.9257,
+                "tool_id": "group11"
+            },
+            {
+                "metric_value": 0.9215,
+                "tool_id": "group03"
+            },
+            {
+                "metric_value": 0.9031,
+                "tool_id": "group05"
+            },
+            {
+                "metric_value": 0.8641,
+                "tool_id": "group10"
             }
-        },
-        "schema_url": "https://raw.githubusercontent.com/inab/OpenEBench_scientific_visualizer/master/benchmarking_data_model/aggregation_dataset_json_schema.json"
+        ],
+        "visualization": {
+            "metric": "F-Measure",
+            "type": "bar-plot"
+        }
     },
+    "schema_url": "https://raw.githubusercontent.com/inab/OpenEBench_scientific_visualizer/master/benchmarking_data_model/aggregation_dataset_json_schema.json",
     "dataset_contact_ids": [
         "Daniel.Lopez"
     ],
