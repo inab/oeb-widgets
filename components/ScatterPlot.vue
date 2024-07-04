@@ -81,7 +81,8 @@
     </v-row>
 
     <v-row id="todownload" :class="{ 'centered-download': isDownloading }">
-      <v-col :cols="isDownloading ? 8 : 8" class="justify-center" id="chartCapture">
+      <div :class="[sorted ? 'col-8' : 'col-12']" class="justify-center" id="chartCapture">
+        
         <!-- CHART -->
         <div ref="chart" id="scatterPlot"></div>
         
@@ -92,25 +93,11 @@
           message="At least four participants are required for the benchmark!"
           type="warning"
         />
-
-        <!-- ID AND DATE TABLE -->
-        <div class="info-table" v-if="datasetModDate">
-          <v-simple-table class="custom-table">
-          <tbody>
-                <tr>
-                  <th class="first-th">Dataset ID</th>
-                  <td>{{ datasetId }}</td>
-                  <th>Last Update</th>
-                  <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
-                </tr>
-              </tbody>
-        </v-simple-table>
-        </div>
         
-      </v-col>
+      </div>
 
       <!-- Table -->
-      <v-col :cols="isDownloading ? 8 : 4">
+      <div class="col-4" v-if="sorted">
         <transition name="fade">
           <v-simple-table class="tools-table" height="800px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
             <thead>
@@ -155,7 +142,24 @@
 
           </v-simple-table>
         </transition>
-      </v-col>
+      </div>
+
+      <!-- ID AND DATE TABLE -->
+      <div class="col-12">
+        <div class="info-table" v-if="datasetModDate">
+          <v-simple-table class="custom-table">
+          <tbody>
+                <tr>
+                  <th class="first-th">Dataset ID</th>
+                  <td>{{ datasetId }}</td>
+                  <th>Last Update</th>
+                  <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
+                </tr>
+              </tbody>
+        </v-simple-table>
+        </div>
+      </div>
+      
 
     </v-row>
   </v-container>
@@ -189,6 +193,7 @@ export default {
   },
   data() {
     return {
+      sorted: false,
       isDownloading: false,
       classificationDisabled: false,
       datasetId: null,
@@ -668,6 +673,11 @@ export default {
     // NO CLASSIFICATION
     // ----------------------------------------------------------------
     noClassification(){
+      this.sorted = false;
+      // Redimensionar el gráfico
+      Plotly.Plots.resize(this.$refs.chart);
+
+      // Reset the Plot
       this.tableData = []
       this.viewKmeans = false;
       this.viewSquare = false;
@@ -716,6 +726,8 @@ export default {
         // restarts the traces
         Plotly.restyle(this.$refs.chart, { visible: visibleArray });
       }
+
+      
     },
 
 
@@ -730,6 +742,10 @@ export default {
       const plot = document.getElementById('scatterPlot')
       if (plot && plot.data) {
         const numTraces = plot.data.length;
+
+        // Redimensionar el gráfico
+        this.sorted = true;
+        Plotly.Plots.resize(this.$refs.chart);
 
         // Reset visibilities. Hide the Kmeans and Show the Square
         this.showShapesKmeans = false;
@@ -760,6 +776,9 @@ export default {
 
         this.calculateQuartiles(this.xValues, this.yValues, this.toolID);
         this.optimalView();
+
+        
+
       }else{
         console.error("The graph with id 'scatterPlot' has no data")
       } 
@@ -999,6 +1018,11 @@ export default {
       const plot = document.getElementById('scatterPlot')
       if (plot && plot.data) {
         const numTraces = plot.data.length;
+
+        // Redimensionar el gráfico
+        this.sorted = true;
+        Plotly.Plots.resize(this.$refs.chart);
+
 
         this.viewDiagonal = true;
         this.viewSquare = false;
@@ -1272,6 +1296,11 @@ export default {
       if (plot && plot.data) {
         const numTraces = plot.data.length;
 
+        // Redimensionar el gráfico
+        this.sorted = true;
+        Plotly.Plots.resize(this.$refs.chart);
+
+
         // Reset visibilities. Hide the Square and Show the Kmeans
         this.showShapesSquare = false;
         this.showAnnotationSquare = false;
@@ -1302,6 +1331,8 @@ export default {
         let better = this.optimalview
         this.createShapeClustering(this.dataPoints, this.toolID, better, this.allToolID);
 
+        // Redimensionar el gráfico
+        Plotly.Plots.resize(this.$refs.chart);
       }else{
         console.error("The graph with id 'scatterPlot' has no data")
       } 
