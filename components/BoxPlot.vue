@@ -91,15 +91,15 @@
                 </div>
             </v-col>
         </v-row>
-        <v-row class="mt-4" id="todownload">
+        <v-row class="mt-4" id="todownload" :class="{ 'centered-download': isDownloading }">
             <!-- Chart -->
-            <div  id="chartCapture"
-                :class="[sorted ? 'col-8' : 'col-12']">
+            <div  id="chartCapture" :class="[sorted ? 'col-8' : 'col-12']">
+                <!-- CHART -->
                 <div ref="chart" id="boxPlot"></div>
             </div>
             <!-- Performance Table -->
             <div class="col-4" id="performanceCapture" v-if="sorted">
-                <v-simple-table class="tools-table" fixed-header id='performanceTable'>
+                <v-simple-table class="tools-table" height="500px" fixed-header id='performanceTable'>
                     <thead>
                         <tr>
                             <th class="tools-th">Participants</th>
@@ -137,7 +137,7 @@
                 </v-simple-table>
             </div>
             <!-- ID AND DATE TABLE -->
-             <div class="col-12">
+             <div :class="isDownloading ? 'col-8' : 'col-12'">
                 <div class="info-table">
                     <v-simple-table class="custom-table" v-if="datasetModDate">
                         <tbody>
@@ -205,6 +205,7 @@ export default {
         },
         sortedName: 'Default Sort',
         sorted: false,
+        isDownloading: false,
         performanceData: [],
         markerColors: ['#D62728', '#FF7F0E', '#8C564B', '#E377C2', '#4981B6', '#BCBD22', '#9467BD', '#0C9E7B', '#7F7F7F', '#31B8BD', '#FB8072', '#62D353'],
     };
@@ -261,8 +262,10 @@ export default {
         this.layout = {
             title: '',
             autosize: true,
+            height: 600,
             legend: {"orientation": "h"},
             showlegend: true,
+            margin: { l: 50, r: 50, t: 100, b: 110, pad: 4 },
             images: [
                 {
                     source: imgLogo,
@@ -342,6 +345,8 @@ export default {
             autosize: true,
             legend: {"orientation": "h"},
             showlegend: true,
+            height: 600,
+            margin: { l: 50, r: 50, t: 100, b: 110, pad: 4 },
             images: [
                 {
                     source: imgLogo,
@@ -425,6 +430,8 @@ export default {
                 autosize: true,
                 legend: {"orientation": "h"},
                 showlegend: true,
+                height: 600,
+                margin: { l: 50, r: 50, t: 100, b: 110, pad: 4 },
                 images: [
                 {
                     source: imgLogo,
@@ -543,23 +550,46 @@ export default {
                 Plotly.downloadImage(graphDiv, { format: 'svg', width: 800, height: 600, filename: `benchmarking_chart_${this.datasetId}` });
 
             } else {
-                Plotly.relayout(this.$refs.chart, this.layout);
+                // Plotly.relayout(this.$refs.chart, this.layout);
 
                 if(this.sorted) {
+
+                    this.isDownloading = true;
+                    await this.$nextTick();
+                    // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+                    await new Promise(resolve => setTimeout(resolve, 500)); //performanceTable
+
+
                     const toDownloadDiv = document.getElementById('todownload');
+
+                    const table = document.getElementById('performanceTable');
+                    const innerDiv = table.querySelector('div[style*="height"]');
+                    const originalHeight = innerDiv.style.height;
+
+                    // Remove the height style
+                    innerDiv.style.height = '';
+                    await new Promise(resolve => setTimeout(resolve, 200)); //performanceTable
+
+
                     const downloadCanvas = await HTML2CANVAS(toDownloadDiv, {
-                        scrollX: 0,
-                        scrollY: 0,
-                        width: toDownloadDiv.offsetWidth,
-                        height: toDownloadDiv.offsetHeight,
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: toDownloadDiv.offsetWidth,
+                    height: toDownloadDiv.offsetHeight,
                     });
-                    const downloadImage = downloadCanvas.toDataURL(`image/${format}`); 
+
+                    // Restore the height style
+                    innerDiv.style.height = originalHeight;
+
+                    const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+
                     const link = document.createElement('a');
                     link.href = downloadImage;
                     link.download = `benchmarking_chart_${this.datasetId}.${format}`;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
+                    this.isDownloading = false;
 
                 } else {
                     const options = { format, height: 700, width: 800 };
