@@ -77,3 +77,21 @@
 .tools-table .classify-th {
     width: 40%;
 }
+
+
+/* styles for when to download the chart and table */
+.centered-download {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .centered-download .v-col {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .centered-download #scatterPlot, 
+  .centered-download #benchmarkingTable {
+    width: 100%;
+  }
