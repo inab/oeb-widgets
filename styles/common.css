@@ -95,3 +95,13 @@
   .centered-download #benchmarkingTable {
     width: 100%;
   }
+
+  .overlay-progress {
+    margin-bottom: 20px;
+    margin-left: 10px !important;
+  }
+  
+  .overlay-text {
+    font-size: large;
+    text-align: center;
+  }

@@ -91,6 +91,18 @@
                 </div>
             </v-col>
         </v-row>
+
+        <!-- Overlay para el loader -->
+        <v-overlay :value="isDownloading">
+        <div class="overlay-content">
+            <v-progress-circular
+            indeterminate
+            size="64"
+            class="overlay-progress"
+            ></v-progress-circular>
+            <div class="overlay-text">Downloading...</div>
+        </div>
+        </v-overlay>
         <v-row class="mt-4" id="todownload" :class="{ 'centered-download': isDownloading }">
             <!-- Chart -->
             <div  id="chartCapture" :class="[sorted ? 'col-8' : 'col-12']">
@@ -494,7 +506,7 @@ export default {
                     this.isDownloading = true;
                     await this.$nextTick();
                     // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 200));
 
                     const toDownloadDiv = document.getElementById('todownload');
 
@@ -583,7 +595,7 @@ export default {
                     this.isDownloading = true;
                     await this.$nextTick();
                     // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 200));
 
                     const toDownloadDiv = document.getElementById('todownload');
 
