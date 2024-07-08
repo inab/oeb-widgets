@@ -490,75 +490,11 @@ export default {
                 pdf.setFont(undefined, 'bold');
                 pdf.text(`Benchmarking Results of ${this.datasetId} at ${this.formatDateString(this.datasetModDate)}`, 105, 10, null, null, 'center');
 
-                // Get chart image as base64 data URI
-                const chartImageURI = await Plotly.toImage(document.getElementById('boxPlot'), { format: 'png', width: 750, height: 600 });
-
-                // Adding image to pdf
-                pdf.addImage(chartImageURI, 'PNG', 10, 20);
-
                 if (this.sorted) {
-                    const columns = ["Participants", "Performance"]; // Define your columns
-
-                    // Setting table rows
-                    const rows = this.traces.map(p => [p.name, p.median]);
-
-                    // Getting our traces
-                    let currentTraces = this.traces;
-
-                    // Generate autoTable with custom styles
-                    pdf.autoTable({
-                    head: [columns],
-                    body: rows,
-                    startY: 190,
-                    theme: 'grid',
-                    tableWidth: 'auto',
-                    styles: {
-                        cellPadding: 1,
-                        fontSize: 8,
-                        overflow: 'linebreak',
-                        halign: 'center'
-                    },
-                    headStyles: {
-                        fillColor: [108, 117, 125]
-                    },
-                    willDrawCell: function (data) {
-                        if (data.row.section === 'body') {
-                        // Check if the column header matches 'Performance'
-                        if (data.column.dataKey === 0) {
-                            const rowIndex = data.row.index;
-                            const color = currentTraces[rowIndex].marker.color;
-
-                            // Setting & filling with each trace color
-                            pdf.setFillColor(color);
-                            pdf.rect(data.cell.x -2, data.cell.y, 10, data.cell.height, 'F');
-
-                            // Restar original color
-                            pdf.setFillColor(255, 255, 255);
-                        }
-                        }
-                    },
-                    });
-                    // Save the PDF
-                    pdf.save(`benchmarking_chart__performance_${this.datasetId}.${format}`);
-                } else {
-                    // Save the PDF
-                    pdf.save(`benchmarking_chart_${this.datasetId}.${format}`);
-                }
-
-            } else if (format === 'svg') {
-                const graphDiv = document.getElementById('boxPlot')
-                Plotly.downloadImage(graphDiv, { format: 'svg', width: 800, height: 600, filename: `benchmarking_chart_${this.datasetId}` });
-
-            } else {
-                // Plotly.relayout(this.$refs.chart, this.layout);
-
-                if(this.sorted) {
-
                     this.isDownloading = true;
                     await this.$nextTick();
                     // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
-                    await new Promise(resolve => setTimeout(resolve, 500)); //performanceTable
-
+                    await new Promise(resolve => setTimeout(resolve, 500));
 
                     const toDownloadDiv = document.getElementById('todownload');
 
@@ -568,7 +504,18 @@ export default {
 
                     // Remove the height style
                     innerDiv.style.height = '';
-                    await new Promise(resolve => setTimeout(resolve, 200)); //performanceTable
+
+                    // Crear una fila en blanco temporalmente
+                    const tableBody = table.querySelector('tbody');
+                    const blankRow = document.createElement('tr');
+                    const numCols = tableBody.rows[0].cells.length;
+                    for (let i = 0; i < numCols; i++) {
+                        const newCell = document.createElement('td');
+                        newCell.innerHTML = '&nbsp;'; // Añadir espacio en blanco
+                        newCell.style.border = 'none'; // Quitar el borde
+                        blankRow.appendChild(newCell);
+                    }
+                    tableBody.appendChild(blankRow);
 
 
                     const downloadCanvas = await HTML2CANVAS(toDownloadDiv, {
@@ -576,7 +523,101 @@ export default {
                     scrollY: 0,
                     width: toDownloadDiv.offsetWidth,
                     height: toDownloadDiv.offsetHeight,
+                    scale: 2,  // Aumentar la escala para mejorar la calidad de la imagen
+                    useCORS: true,  // Permitir recursos de diferentes dominios
                     });
+
+                    // Eliminar la fila en blanco después de la captura
+                    tableBody.removeChild(blankRow);
+
+                    // Restore the height style
+                    innerDiv.style.height = originalHeight;
+
+                    const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+
+                    // Get the width and height of the image in pixels
+                    const imgWidth = downloadCanvas.width;
+                    const imgHeight = downloadCanvas.height;
+
+                    // Get the size of the PDF page in mm
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+
+                    // Calculate the scaling factor to fit the image within the page
+                    const scaleX = pageWidth / imgWidth;
+                    const scaleY = pageHeight / imgHeight;
+                    let scale = Math.min(scaleX, scaleY);
+
+                    scale *= 1.3;
+
+                    // Calculate the new width and height of the image in mm
+                    const scaledWidth = imgWidth * scale;
+                    const scaledHeight = imgHeight * scale;
+
+                    // Center the image on the page
+                    const xOffset = (pageWidth - scaledWidth) / 2;
+                    const yOffset = 20; // Adjust this value to position the image vertically as needed
+
+                    pdf.addImage(downloadImage, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
+                    this.isDownloading = false;
+
+                    // Save the PDF
+                    pdf.save(`benchmarking_chart__performance_${this.datasetId}.${format}`);
+                } else {
+                    // Get chart image as base64 data URI
+                    const chartImageURI = await Plotly.toImage(document.getElementById('boxPlot'), { format: 'png', width: 750, height: 600 });
+
+                    // Adding image to pdf
+                    pdf.addImage(chartImageURI, 'PNG', 10, 20);
+                    // Save the PDF
+                    pdf.save(`benchmarking_chart_${this.datasetId}.${format}`);
+                }
+
+            } else if (format === 'svg') {
+                const graphDiv = document.getElementById('boxPlot')
+                Plotly.downloadImage(graphDiv, { format: 'svg', width: 800, height: 600, filename: `benchmarking_chart_${this.datasetId}` });
+
+            } else {
+                if(this.sorted) {
+
+                    this.isDownloading = true;
+                    await this.$nextTick();
+                    // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    const toDownloadDiv = document.getElementById('todownload');
+
+                    const table = document.getElementById('performanceTable');
+                    const innerDiv = table.querySelector('div[style*="height"]');
+                    const originalHeight = innerDiv.style.height;
+
+                    // Remove the height style
+                    innerDiv.style.height = '';
+
+                    // Crear una fila en blanco temporalmente
+                    const tableBody = table.querySelector('tbody');
+                    const blankRow = document.createElement('tr');
+                    const numCols = tableBody.rows[0].cells.length;
+                    for (let i = 0; i < numCols; i++) {
+                        const newCell = document.createElement('td');
+                        newCell.innerHTML = '&nbsp;'; // Añadir espacio en blanco
+                        newCell.style.border = 'none'; // Quitar el borde
+                        blankRow.appendChild(newCell);
+                    }
+                    tableBody.appendChild(blankRow);
+
+
+                    const downloadCanvas = await HTML2CANVAS(toDownloadDiv, {
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: toDownloadDiv.offsetWidth,
+                    height: toDownloadDiv.offsetHeight,
+                    scale: 2,  // Aumentar la escala para mejorar la calidad de la imagen
+                    useCORS: true,  // Permitir recursos de diferentes dominios
+                    });
+
+                    // Eliminar la fila en blanco después de la captura
+                    tableBody.removeChild(blankRow);
 
                     // Restore the height style
                     innerDiv.style.height = originalHeight;
