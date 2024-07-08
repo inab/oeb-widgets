@@ -1731,7 +1731,7 @@ export default {
 
       const chart = document.getElementById('scatterPlot');
       chart.layout.images[0].opacity = 0.5;
-      Plotly.relayout(this.$refs.chart, chart.layout);
+        Plotly.update(this.$refs.chart, chart.layout);
 
       if (format === 'png') {
         if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
@@ -1914,7 +1914,10 @@ export default {
       }
 
       chart.layout.images[0].opacity = 0;
-      Plotly.relayout(this.$refs.chart, chart.layout);
+        Plotly.update(this.$refs.chart, chart.layout);
+      } catch (error) {
+        console.error('Error downloading chart:', error);
+      }
     },
   },
   computed: {
