@@ -80,7 +80,22 @@
       </v-col>
     </v-row>
 
+    <!-- Overlay para el loader -->
+    <v-overlay :value="isDownloading">
+      <div class="overlay-content">
+        <v-progress-circular
+          indeterminate
+          size="64"
+          class="overlay-progress"
+        ></v-progress-circular>
+        <div class="overlay-text">Downloading...</div>
+      </div>
+    </v-overlay>
+
     <v-row id="todownload" :class="{ 'centered-download': isDownloading }">
+      <!-- Overlay para loader -->
+      
+
       <div :class="[sorted ? 'col-8' : 'col-12']" class="justify-center" id="chartCapture">
         
         <!-- CHART -->
@@ -2290,5 +2305,14 @@ font-size: 16px !important;
   width: 100%;
 }
 
+.overlay-progress {
+  margin-bottom: 20px;
+  margin-left: 10px !important;
+}
+
+.overlay-text {
+  font-size: large;
+  text-align: center;
+}
 
 </style>
