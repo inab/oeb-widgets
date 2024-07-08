@@ -730,7 +730,7 @@ export default {
       try {
         // Show watermark
         this.layout.images[0].opacity = 0.5;
-        Plotly.relayout(this.$refs.chart, this.layout);
+        Plotly.update(this.$refs.chart, this.layout);
         if (format === 'pdf') {
           const pdf = new jsPDF();
 
@@ -743,7 +743,7 @@ export default {
 
           pdf.addImage(chartImageURI, 'PNG', 10, 20);
 
-          if (this.showAdditionalTable) {
+          if (this.sortOrder === 'sorted' && Object.keys(this.quartileData).length > 1) {
             const columns = ["Participants", "Quartile"]; // Define your columns
 
             // Extract data from quartileDataArray
@@ -856,7 +856,7 @@ export default {
 
         // Hide watermark
         this.layout.images[0].opacity = 0;
-        Plotly.relayout(this.$refs.chart, this.layout);
+        Plotly.update(this.$refs.chart, this.layout);
 
       } catch (error) {
         console.error('Error downloading chart:', error);
