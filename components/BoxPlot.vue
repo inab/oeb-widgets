@@ -48,7 +48,7 @@
                     <v-menu offset-y>
                         <template v-slot:activator="{ on, attrs }" >
                             <v-btn  outlined v-bind="attrs" v-on="on"
-                                class="buttons custom-height-button" :disabled="loading">
+                                class="button-classification custom-height-button" :disabled="loading">
                             {{ graphStyle }}
                             </v-btn>
                         </template>
@@ -210,7 +210,7 @@ export default {
         graphStyleMenu: {
             'm': 'Mean',
             'sd': 'Standard Deviation',
-            'empty': 'None'
+            'empty': 'Default Style',
         },
         graphStyle: 'Graph Style',
         sortMenu: {
@@ -414,6 +414,8 @@ export default {
     },
 
     handleChangeGraphStyle(style) {
+        this.graphStyle = (style !== 'empty') ? this.graphStyleMenu[style] : 'Graph Style';
+
         this.traces.map((item) => {
             if(style == 'm') {
                 item.boxmean = true;
