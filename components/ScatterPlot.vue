@@ -41,19 +41,19 @@
             </v-menu>
 
             <!-- Original View / Optimal view -->
-            <v-btn @click="toggleView" outlined class="button-originalView custom-height-button">
+            <v-btn @click="toggleView" outlined class="buttons custom-height-button">
               {{ viewButtonText }}
             </v-btn>
 
             <!-- Reset View -->
-            <v-btn @click="noClassification" outlined class="button-originalView custom-height-button">
-              Reset to All
+            <v-btn @click="noClassification" outlined class="buttons custom-height-button">
+              Reset Chart
             </v-btn>
 
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-download custom-height-button">
+                <v-btn outlined v-bind="attrs" v-on="on" class="buttons custom-height-button">
                   Download
                 </v-btn>
               </template>
@@ -80,8 +80,21 @@
       </v-col>
     </v-row>
 
+    <!-- Overlay para el loader -->
+    <v-overlay :value="isDownloading">
+      <div class="overlay-content">
+        <v-progress-circular
+          indeterminate
+          size="64"
+          class="overlay-progress"
+        ></v-progress-circular>
+        <div class="overlay-text">Downloading...</div>
+      </div>
+    </v-overlay>
+
     <v-row id="todownload" :class="{ 'centered-download': isDownloading }">
-      <v-col :cols="isDownloading ? 8 : 8" class="justify-center" id="chartCapture">
+      <div :class="[sorted ? 'col-8' : 'col-12']" class="justify-center" id="chartCapture">
+        
         <!-- CHART -->
         <div ref="chart" id="scatterPlot"></div>
         
@@ -94,23 +107,25 @@
         />
 
         <!-- ID AND DATE TABLE -->
-        <div class="info-table" v-if="datasetModDate">
-          <v-simple-table class="custom-table">
-          <tbody>
-                <tr>
-                  <th class="first-th">Dataset ID</th>
-                  <td>{{ datasetId }}</td>
-                  <th>Last Update</th>
-                  <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
-                </tr>
-              </tbody>
-        </v-simple-table>
+        <div>
+          <div class="info-table" v-if="datasetModDate">
+            <v-simple-table class="custom-table">
+            <tbody>
+                  <tr>
+                    <th class="first-th">Dataset ID</th>
+                    <td>{{ datasetId }}</td>
+                    <th>Last Update</th>
+                    <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
+                  </tr>
+                </tbody>
+          </v-simple-table>
+          </div>
         </div>
         
-      </v-col>
+      </div>
 
       <!-- Table -->
-      <v-col :cols="isDownloading ? 8 : 4">
+      <div class="col-4" v-if="sorted">
         <transition name="fade">
           <v-simple-table class="tools-table" height="800px" fixed-header v-if="tableData.length > 0" id="benchmarkingTable">
             <thead>
@@ -155,7 +170,8 @@
 
           </v-simple-table>
         </transition>
-      </v-col>
+      </div>
+
 
     </v-row>
   </v-container>
@@ -189,6 +205,7 @@ export default {
   },
   data() {
     return {
+      sorted: false,
       isDownloading: false,
       classificationDisabled: false,
       datasetId: null,
@@ -668,6 +685,11 @@ export default {
     // NO CLASSIFICATION
     // ----------------------------------------------------------------
     noClassification(){
+      this.sorted = false;
+      // Redimensionar el gráfico
+      Plotly.Plots.resize(this.$refs.chart);
+
+      // Reset the Plot
       this.tableData = []
       this.viewKmeans = false;
       this.viewSquare = false;
@@ -716,6 +738,8 @@ export default {
         // restarts the traces
         Plotly.restyle(this.$refs.chart, { visible: visibleArray });
       }
+
+      
     },
 
 
@@ -730,6 +754,10 @@ export default {
       const plot = document.getElementById('scatterPlot')
       if (plot && plot.data) {
         const numTraces = plot.data.length;
+
+        // Redimensionar el gráfico
+        this.sorted = true;
+        Plotly.Plots.resize(this.$refs.chart);
 
         // Reset visibilities. Hide the Kmeans and Show the Square
         this.showShapesKmeans = false;
@@ -760,6 +788,9 @@ export default {
 
         this.calculateQuartiles(this.xValues, this.yValues, this.toolID);
         this.optimalView();
+
+        
+
       }else{
         console.error("The graph with id 'scatterPlot' has no data")
       } 
@@ -999,6 +1030,11 @@ export default {
       const plot = document.getElementById('scatterPlot')
       if (plot && plot.data) {
         const numTraces = plot.data.length;
+
+        // Redimensionar el gráfico
+        this.sorted = true;
+        Plotly.Plots.resize(this.$refs.chart);
+
 
         this.viewDiagonal = true;
         this.viewSquare = false;
@@ -1272,6 +1308,11 @@ export default {
       if (plot && plot.data) {
         const numTraces = plot.data.length;
 
+        // Redimensionar el gráfico
+        this.sorted = true;
+        Plotly.Plots.resize(this.$refs.chart);
+
+
         // Reset visibilities. Hide the Square and Show the Kmeans
         this.showShapesSquare = false;
         this.showAnnotationSquare = false;
@@ -1302,6 +1343,8 @@ export default {
         let better = this.optimalview
         this.createShapeClustering(this.dataPoints, this.toolID, better, this.allToolID);
 
+        // Redimensionar el gráfico
+        Plotly.Plots.resize(this.$refs.chart);
       }else{
         console.error("The graph with id 'scatterPlot' has no data")
       } 
@@ -1697,193 +1740,229 @@ export default {
     // DOWNLOAD
     // ----------------------------------------------------------------
     async downloadChart (format, datasetId) {
+      try {
+        const chart = document.getElementById('scatterPlot');
+        chart.layout.images[0].opacity = 0.5;
+        Plotly.update(this.$refs.chart, chart.layout);
 
-      const chart = document.getElementById('scatterPlot');
-      chart.layout.images[0].opacity = 0.5;
-      Plotly.relayout(this.$refs.chart, chart.layout);
+        if (format === 'png') {
+          if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
+            this.isDownloading = true;
+            // Esperar a que Vue actualice el DOM
+            await this.$nextTick();
+            await new Promise(resolve => setTimeout(resolve, 200));
 
-      if (format === 'png') {
-        if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
-          this.isDownloading = true;
-          // Esperar a que Vue actualice el DOM
-          await this.$nextTick();
-          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
-          await new Promise(resolve => setTimeout(resolve, 500));
+            const toDownloadDiv = document.getElementById('todownload');
 
-          const toDownloadDiv = document.getElementById('todownload');
+            const table = document.getElementById('benchmarkingTable');
+            const innerDiv = table.querySelector('div[style*="height"]');
+            const originalHeight = innerDiv.style.height;
 
-          const table = document.getElementById('benchmarkingTable');
-          const innerDiv = table.querySelector('div[style*="height"]');
-          const originalHeight = innerDiv.style.height;
+            // Remove the height style
+            innerDiv.style.height = '';
 
-          // Remove the height style
-          innerDiv.style.height = '';
+            // Crear una fila en blanco temporalmente para evitar el movimiento de la ultima celda.
+            const tableBody = table.querySelector('tbody');
+            const blankRow = document.createElement('tr');
+            const numCols = tableBody.rows[0].cells.length;
+            for (let i = 0; i < numCols; i++) {
+                const newCell = document.createElement('td');
+                newCell.innerHTML = '&nbsp;'; // Añadir espacio en blanco
+                newCell.style.border = 'none'; // Quitar el borde
+                blankRow.appendChild(newCell);
+            }
+            tableBody.appendChild(blankRow);
 
-          const downloadCanvas = await html2canvas(toDownloadDiv, {
-            scrollX: 0,
-            scrollY: 0,
-            width: toDownloadDiv.offsetWidth,
-            height: toDownloadDiv.offsetHeight,
-          });
+            const downloadCanvas = await html2canvas(toDownloadDiv, {
+              scrollX: 0,
+              scrollY: 0,
+              width: toDownloadDiv.offsetWidth,
+              height: toDownloadDiv.offsetHeight,
+              scale: 2,
+              useCORS: true, 
+            });
 
-          // Restore the height style
-          innerDiv.style.height = originalHeight;
+            // Eliminar la fila en blanco después de la captura
+            tableBody.removeChild(blankRow);
 
-          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+            // Restore the height style
+            innerDiv.style.height = originalHeight;
 
-          const link = document.createElement('a');
-          link.href = downloadImage;
-          link.download = `benchmarking_chart_${datasetId}.${format}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          this.isDownloading = false;
+            const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
 
-        } else {
-          const toDownloadDiv =  document.getElementById('chartCapture');
-          const downloadCanvas = await html2canvas(toDownloadDiv, {
-            scrollX: 0,
-            scrollY: 0,
-            width: toDownloadDiv.offsetWidth,
-            height: toDownloadDiv.offsetHeight,
-          });
-
-          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
-
-          const link = document.createElement('a');
-          link.href = downloadImage;
-          link.download = `benchmarking_chart_${datasetId}.${format}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-      } else if (format === 'svg') {
-        const options = { format, height: 700, width: 800 };
-        Plotly.toImage(chart, options)
-          .then((url) => {
             const link = document.createElement('a');
-            link.href = url;
+            link.href = downloadImage;
             link.download = `benchmarking_chart_${datasetId}.${format}`;
+            document.body.appendChild(link);
             link.click();
-          })
-          .catch((error) => {
-              console.error(`Error downloading graphic as ${format}`, error);
-          });
+            document.body.removeChild(link);
+            this.isDownloading = false;
 
-      } else if (format === 'pdf') {
+          } else {
+            const toDownloadDiv =  document.getElementById('chartCapture');
+            const downloadCanvas = await html2canvas(toDownloadDiv, {
+              scrollX: 0,
+              scrollY: 0,
+              width: toDownloadDiv.offsetWidth,
+              height: toDownloadDiv.offsetHeight,
+            });
 
-        const pdf = new jsPDF();
+            const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
 
-        pdf.setFontSize(12);
-        pdf.setFont(undefined, 'bold');
-        pdf.text(`Benchmarking Results of ${this.datasetId} at ${this.formatDateString(this.datasetModDate)}`, 105, 10, null, null, 'center');
+            const link = document.createElement('a');
+            link.href = downloadImage;
+            link.download = `benchmarking_chart_${datasetId}.${format}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        } else if (format === 'svg') {
+          const options = { format, height: 700, width: 800 };
+          Plotly.toImage(chart, options)
+            .then((url) => {
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = `benchmarking_chart_${datasetId}.${format}`;
+              link.click();
+            })
+            .catch((error) => {
+                console.error(`Error downloading graphic as ${format}`, error);
+            });
 
-        if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
-          this.isDownloading = true;
-          // Esperar a que Vue actualice el DOM
-          await this.$nextTick();
-          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
-          await new Promise(resolve => setTimeout(resolve, 500));
+        } else if (format === 'pdf') {
 
-          const toDownloadDiv = document.getElementById('todownload');
+          const pdf = new jsPDF();
 
-          const table = document.getElementById('benchmarkingTable');
-          const innerDiv = table.querySelector('div[style*="height"]');
-          const originalHeight = innerDiv.style.height;
+          pdf.setFontSize(12);
+          pdf.setFont(undefined, 'bold');
+          pdf.text(`Benchmarking Results of ${this.datasetId} at ${this.formatDateString(this.datasetModDate)}`, 105, 10, null, null, 'center');
 
-          // Remove the height style
-          innerDiv.style.height = '';
-          const downloadCanvas = await html2canvas(toDownloadDiv, {
-            scrollX: 0,
-            scrollY: 0,
-            width: toDownloadDiv.offsetWidth,
-            height: toDownloadDiv.offsetHeight,
-          });
+          if (this.viewSquare || this.viewKmeans || this.viewDiagonal) {
+            this.isDownloading = true;
+            // Esperar a que Vue actualice el DOM
+            await this.$nextTick();
+            // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+            await new Promise(resolve => setTimeout(resolve, 200));
 
-          // Restore the height style
-          innerDiv.style.height = originalHeight;
+            const toDownloadDiv = document.getElementById('todownload');
 
-          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+            const table = document.getElementById('benchmarkingTable');
+            const innerDiv = table.querySelector('div[style*="height"]');
+            const originalHeight = innerDiv.style.height;
 
-          // Get the width and height of the image in pixels
-          const imgWidth = downloadCanvas.width;
-          const imgHeight = downloadCanvas.height;
+            // Remove the height style
+            innerDiv.style.height = '';
+            // Crear una fila en blanco temporalmente para evitar el movimiento de la ultima celda.
+            const tableBody = table.querySelector('tbody');
+            const blankRow = document.createElement('tr');
+            const numCols = tableBody.rows[0].cells.length;
+            for (let i = 0; i < numCols; i++) {
+                const newCell = document.createElement('td');
+                newCell.innerHTML = '&nbsp;'; // Añadir espacio en blanco
+                newCell.style.border = 'none'; // Quitar el borde
+                blankRow.appendChild(newCell);
+            }
+            tableBody.appendChild(blankRow);
 
-          // Get the size of the PDF page in mm
-          const pageWidth = pdf.internal.pageSize.getWidth();
-          const pageHeight = pdf.internal.pageSize.getHeight();
+            const downloadCanvas = await html2canvas(toDownloadDiv, {
+              scrollX: 0,
+              scrollY: 0,
+              width: toDownloadDiv.offsetWidth,
+              height: toDownloadDiv.offsetHeight,
+              scale: 2,
+              useCORS: true, 
+            });
 
-          // Calculate the scaling factor to fit the image within the page
-          const scaleX = pageWidth / imgWidth;
-          const scaleY = pageHeight / imgHeight;
-          let scale = Math.min(scaleX, scaleY);
+            // Eliminar la fila en blanco después de la captura
+            tableBody.removeChild(blankRow);
 
-          scale *= 1.3;
+            // Restore the height style
+            innerDiv.style.height = originalHeight;
 
-          // Calculate the new width and height of the image in mm
-          const scaledWidth = imgWidth * scale;
-          const scaledHeight = imgHeight * scale;
+            const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
 
-          // Center the image on the page
-          const xOffset = (pageWidth - scaledWidth) / 2;
-          const yOffset = 20; // Adjust this value to position the image vertically as needed
+            // Get the width and height of the image in pixels
+            const imgWidth = downloadCanvas.width;
+            const imgHeight = downloadCanvas.height;
 
-          pdf.addImage(downloadImage, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
-          this.isDownloading = false;
+            // Get the size of the PDF page in mm
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
 
-        }else{
-          // Get chart image as base64 data URI
-          const toDownloadDiv =  document.getElementById('chartCapture');
-          const downloadCanvas = await html2canvas(toDownloadDiv, {
-            scrollX: 0,
-            scrollY: 0,
-            width: toDownloadDiv.offsetWidth,
-            height: toDownloadDiv.offsetHeight,
-          });
+            // Calculate the scaling factor to fit the image within the page
+            const scaleX = pageWidth / imgWidth;
+            const scaleY = pageHeight / imgHeight;
+            let scale = Math.min(scaleX, scaleY);
 
-          const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
-          // Get the width and height of the image in pixels
-          const imgWidth = downloadCanvas.width;
-          const imgHeight = downloadCanvas.height;
+            scale *= 1.3;
 
-          // Get the size of the PDF page in mm
-          const pageWidth = pdf.internal.pageSize.getWidth();
-          const pageHeight = pdf.internal.pageSize.getHeight();
+            // Calculate the new width and height of the image in mm
+            const scaledWidth = imgWidth * scale;
+            const scaledHeight = imgHeight * scale;
 
-          // Calculate the scaling factor to fit the image within the page
-          const scaleX = pageWidth / imgWidth;
-          const scaleY = pageHeight / imgHeight;
-          const scale = Math.min(scaleX, scaleY);
+            // Center the image on the page
+            const xOffset = (pageWidth - scaledWidth) / 2;
+            const yOffset = 20; // Adjust this value to position the image vertically as needed
 
-          // Calculate the new width and height of the image in mm
-          const scaledWidth = imgWidth * scale;
-          const scaledHeight = imgHeight * scale;
+            pdf.addImage(downloadImage, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
+            this.isDownloading = false;
 
-          // Center the image on the page
-          const xOffset = (pageWidth - scaledWidth) / 2;
-          const yOffset = 20; // Adjust this value to position the image vertically as needed
-          pdf.addImage(downloadImage, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
+          }else{
+            // Get chart image as base64 data URI
+            const toDownloadDiv =  document.getElementById('chartCapture');
+            const downloadCanvas = await html2canvas(toDownloadDiv, {
+              scrollX: 0,
+              scrollY: 0,
+              width: toDownloadDiv.offsetWidth,
+              height: toDownloadDiv.offsetHeight,
+            });
+
+            const downloadImage = downloadCanvas.toDataURL(`image/${format}`);
+            // Get the width and height of the image in pixels
+            const imgWidth = downloadCanvas.width;
+            const imgHeight = downloadCanvas.height;
+
+            // Get the size of the PDF page in mm
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            // Calculate the scaling factor to fit the image within the page
+            const scaleX = pageWidth / imgWidth;
+            const scaleY = pageHeight / imgHeight;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Calculate the new width and height of the image in mm
+            const scaledWidth = imgWidth * scale;
+            const scaledHeight = imgHeight * scale;
+
+            // Center the image on the page
+            const xOffset = (pageWidth - scaledWidth) / 2;
+            const yOffset = 20; // Adjust this value to position the image vertically as needed
+            pdf.addImage(downloadImage, 'PNG', xOffset, yOffset, scaledWidth, scaledHeight);
+          }
+          
+          // Save the PDF
+          pdf.save(`benchmarking_chart_${datasetId}.${format}`);
+
+        } else if (format === 'json') {
+          // Descargar como JSON
+          const chartData = this.originalData // Obtener datos del gráfico
+          console.log(chartData)
+          const jsonData = JSON.stringify(chartData);
+
+          const link = document.createElement('a');
+          link.href = `data:text/json;charset=utf-8,${encodeURIComponent(jsonData)}`;
+          link.download = `${datasetId}.json`;
+          link.click();
+        } else {
+          console.error('Error downloading chart:', error);
         }
 
-        // Save the PDF
-        pdf.save(`benchmarking_chart_${datasetId}.${format}`);
-
-      } else if (format === 'json') {
-        // Descargar como JSON
-        const chartData = this.originalData // Obtener datos del gráfico
-        console.log(chartData)
-        const jsonData = JSON.stringify(chartData);
-
-        const link = document.createElement('a');
-        link.href = `data:text/json;charset=utf-8,${encodeURIComponent(jsonData)}`;
-        link.download = `${datasetId}.json`;
-        link.click();
-      } else {
+        chart.layout.images[0].opacity = 0;
+        Plotly.update(this.$refs.chart, chart.layout);
+      } catch (error) {
         console.error('Error downloading chart:', error);
       }
-
-      chart.layout.images[0].opacity = 0;
-      Plotly.relayout(this.$refs.chart, chart.layout);
     },
   },
   computed: {
@@ -1941,36 +2020,23 @@ export default {
 
 .button-classification{
   width: 210px;
-  font-size: 17px !important;
-  text-transform: capitalize;
-}
-.button-originalView {
-  width: 140px;
   font-size: 16px !important;
   text-transform: capitalize;
 }
 
-.button-download {
-  width: 168px;
+.buttons {
+  width: 160px;
   font-size: 16px !important;
   text-transform: capitalize;
 }
-.menu-item:hover {
-  background-color: #6c757d;
-  cursor: pointer;
-}
+
 @media (max-width: 1200px) {
   .button-classification {
     width: 180px;
     font-size: 14px !important;
   }
 
-  .button-originalView {
-    width: 120px;
-    font-size: 14px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 140px;
     font-size: 14px !important;
   }
@@ -1987,12 +2053,7 @@ export default {
     font-size: 12px !important;
   }
 
-  .button-originalView {
-    width: 100px;
-    font-size: 12px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 120px;
     font-size: 12px !important;
   }
@@ -2009,12 +2070,7 @@ export default {
     font-size: 10px !important;
   }
 
-  .button-originalView {
-    width: 80px;
-    font-size: 10px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 100px;
     font-size: 10px !important;
   }
@@ -2027,8 +2083,7 @@ export default {
 
 @media (max-width: 300px) {
   .button-classification,
-  .button-originalView,
-  .button-download {
+  .buttons {
     width: 100%;
     font-size: 8px !important;
   }
@@ -2039,7 +2094,7 @@ export default {
   }
 }
 
-/* Info table */
+/* Buttons */
 
 .custom-btn-toggle .v-btn:first-child {
   border-top-left-radius: 10px;
@@ -2223,5 +2278,14 @@ font-size: 16px !important;
   width: 100%;
 }
 
+.overlay-progress {
+  margin-bottom: 20px;
+  margin-left: 10px !important;
+}
+
+.overlay-text {
+  font-size: large;
+  text-align: center;
+}
 
 </style>

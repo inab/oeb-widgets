@@ -12,17 +12,17 @@
             </v-btn>
             <v-btn class="button-classification custom-height-button" v-else :disabled="loading"
               @click="toggleSortOrder">Return To Raw Results</v-btn>
-            <v-btn @click="optimalView" class="button-resetView custom-height-button" v-if="optimal === 'no'"
+            <v-btn @click="optimalView" class="buttons custom-height-button" v-if="optimal === 'no'"
               :disabled="loading">
               Optimal View
             </v-btn>
-            <v-btn class="button-resetView custom-height-button" v-else :disabled="loading" @click="optimalView">
+            <v-btn class="buttons custom-height-button" v-else :disabled="loading" @click="optimalView">
               Original View</v-btn>
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }" >
                 <v-btn  outlined v-bind="attrs" v-on="on"
-                  class="button-download custom-height-button" :disabled="loading">
+                  class="buttons custom-height-button" :disabled="loading">
                   Download
                 </v-btn>
               </template>
@@ -45,59 +45,78 @@
       </v-col>
     </v-row>
 
+    <!-- Overlay para el loader -->
+    <v-overlay :value="isDownloading">
+      <div class="overlay-content">
+        <v-progress-circular
+          indeterminate
+          size="64"
+          class="overlay-progress"
+        ></v-progress-circular>
+        <div class="overlay-text">Downloading...</div>
+      </div>
+    </v-overlay>
+
     <v-row class="mt-4" id="todownload" :class="{ 'centered-download': isDownloading }">
-      <!-- Chart -->
-      <v-col :cols="isDownloading ? 8 : 8"  class="justify-center" id="chartCapture">
+      <div :class="[sorted ? 'col-8' : 'col-12']"  class="justify-center" id="chartCapture">
+        
+        <!-- Chart -->
         <div ref="chart" id="barPlot"></div>
         <br>
+
         <!-- ID AND DATE TABLE -->
-        <div class="info-table">
-          <v-simple-table class="custom-table" v-if="datasetModDate">
-          <tbody>
-            <tr>
-              <th class="first-th">Dataset ID</th>
-              <td>{{ datasetId }}</td>
-              <th>Last Update</th>
-              <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
-            </tr>
-          </tbody>
-          </v-simple-table>
+        <div>
+          <div class="info-table">
+            <v-simple-table class="custom-table" v-if="datasetModDate">
+            <tbody>
+              <tr>
+                <th class="first-th">Dataset ID</th>
+                <td>{{ datasetId }}</td>
+                <th>Last Update</th>
+                <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
+              </tr>
+            </tbody>
+            </v-simple-table>
+          </div>
         </div>
-      </v-col>
+        
+      </div>
 
       <!-- Quartile Table -->
-      <v-col :cols="isDownloading ? 8 : 4" id="quartileCapture" v-if="sortOrder === 'sorted' && Object.keys(quartileData).length > 1">
-        <v-simple-table class="tools-table" height="800px" fixed-header
-          :class="{ 'fade-in': sortOrder === 'sorted', 'fade-out': sortOrder === 'raw' }" id='quartileTable'>
-
-          <thead>
-            <tr>
-              <th class="tools-th">Participants</th>
-              <th class="classify-th">Quartile
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <i class="material-icons custom-alert-icon" v-bind="attrs" v-on="on">
-                      info
-                    </i>
-                  </template>
-                  <div class="quartile-message">
-                    <p><b>The Square quartile label</b></p>
-                    <p>By default, the highest values will be displayed in the first quartile.
-                      Inversely if it is specified.</p>
-                  </div>
-                </v-tooltip>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(quartile, index) in quartileDataArray" :key="index">
-              <td>{{ quartile.tool }}</td>
-              <td :style="{ backgroundColor: quartile.quartile.bgColor }">{{ quartile.quartile.quartile }}
-              </td>
-            </tr>
-          </tbody>
-        </v-simple-table>
-      </v-col>
+      <div class="col-4" v-if="sorted">
+        <transition name="fade">
+          <v-simple-table class="tools-table" height="800px" fixed-header 
+          v-if="sortOrder === 'sorted' && Object.keys(quartileData).length > 1" id='quartileTable'>
+            <thead>
+              <tr>
+                <th class="tools-th">Participants</th>
+                <th class="classify-th">Quartile
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <i class="material-icons custom-alert-icon" v-bind="attrs" v-on="on">
+                        info
+                      </i>
+                    </template>
+                    <div class="quartile-message">
+                      <p><b>The Square quartile label</b></p>
+                      <p>By default, the highest values will be displayed in the first quartile.
+                        Inversely if it is specified.</p>
+                    </div>
+                  </v-tooltip>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(quartile, index) in quartileDataArray" :key="index">
+                <td>{{ quartile.tool }}</td>
+                <td :style="{ backgroundColor: quartile.quartile.bgColor }">{{ quartile.quartile.quartile }}
+                </td>
+              </tr>
+            </tbody>
+          </v-simple-table>
+        </transition>
+      </div>
+      
     </v-row>
   </v-container>
 </template>
@@ -122,6 +141,7 @@ export default {
   },
   data() {
     return {
+      sorted: false,
       isDownloading: false,
       loading: false,
       datasetId: null,
@@ -421,9 +441,14 @@ export default {
 
     // Sort and order view
     // ----------------------------------------------------------------
-    toggleSortOrder() {
+    async toggleSortOrder() {
       try {
         if (this.sortOrder === 'raw') {
+          this.sorted = true;
+          Plotly.Plots.resize(this.$refs.chart);
+          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+          await new Promise(resolve => setTimeout(resolve, 100));
+
           this.showAdditionalTable = !this.showAdditionalTable;
           // Sort logic (descending order)
           const sortedData = this.originalData.challenge_participants.slice().sort((a, b) => b.metric_value - a.metric_value);
@@ -431,6 +456,8 @@ export default {
           this.updateChart(sortedData);
           // Call the animateBars function after updating the chart
           this.animateBars(sortedData);
+
+
           // Calculate quartiles and update the table data
           this.quartileData = this.calculateQuartiles(sortedData);
 
@@ -441,10 +468,17 @@ export default {
           this.addQuartileLabels();
 
         } else {
+          this.sorted = false;
+          Plotly.Plots.resize(this.$refs.chart);
+
+          // Agregar un pequeño retraso para asegurarse de que los cambios se hayan renderizado
+          await new Promise(resolve => setTimeout(resolve, 100));
+
           // Return to raw data
           this.updateChart(this.originalData.challenge_participants);
           // Call the animateBars function after updating the chart
           this.animateBars(this.originalData.challenge_participants);
+          
           this.quartileData = {};
 
           // Remove lines between quartile groups
@@ -452,6 +486,8 @@ export default {
 
           // Clear quartile labels
           this.clearQuartileLabels();
+
+          
         }
 
         // Toggle sortOrder
@@ -707,7 +743,7 @@ export default {
       try {
         // Show watermark
         this.layout.images[0].opacity = 0.5;
-        Plotly.relayout(this.$refs.chart, this.layout);
+        Plotly.update(this.$refs.chart, this.layout);
         if (format === 'pdf') {
           const pdf = new jsPDF();
 
@@ -720,7 +756,7 @@ export default {
 
           pdf.addImage(chartImageURI, 'PNG', 10, 20);
 
-          if (this.showAdditionalTable) {
+          if (this.sortOrder === 'sorted' && Object.keys(this.quartileData).length > 1) {
             const columns = ["Participants", "Quartile"]; // Define your columns
 
             // Extract data from quartileDataArray
@@ -833,7 +869,7 @@ export default {
 
         // Hide watermark
         this.layout.images[0].opacity = 0;
-        Plotly.relayout(this.$refs.chart, this.layout);
+        Plotly.update(this.$refs.chart, this.layout);
 
       } catch (error) {
         console.error('Error downloading chart:', error);
@@ -871,14 +907,8 @@ export default {
   text-transform: capitalize;
 }
 
-.button-resetView {
-  width: 140px;
-  font-size: 16px !important;
-  text-transform: capitalize;
-}
-
-.button-download {
-  width: 168px;
+.buttons {
+  width: 160px;
   font-size: 16px !important;
   text-transform: capitalize;
 }
@@ -889,12 +919,7 @@ export default {
     font-size: 14px !important;
   }
 
-  .button-resetView {
-    width: 120px;
-    font-size: 14px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 140px;
     font-size: 14px !important;
   }
@@ -911,12 +936,7 @@ export default {
     font-size: 12px !important;
   }
 
-  .button-resetView {
-    width: 100px;
-    font-size: 12px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 120px;
     font-size: 12px !important;
   }
@@ -933,12 +953,7 @@ export default {
     font-size: 10px !important;
   }
 
-  .button-resetView {
-    width: 80px;
-    font-size: 10px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 100px;
     font-size: 10px !important;
   }
@@ -952,8 +967,7 @@ export default {
 @media (max-width: 300px) {
 
   .button-classification,
-  .button-resetView,
-  .button-download {
+  .buttons {
     width: 100%;
     font-size: 8px !important;
   }
@@ -962,11 +976,6 @@ export default {
     height: 20px !important;
     line-height: 20px !important;
   }
-}
-
-.menu-item:hover {
-  background-color: #f0f0f0;
-  cursor: pointer;
 }
 
 .custom-btn-toggle .v-btn:first-child {
@@ -1113,5 +1122,15 @@ export default {
 .centered-download #barPlot, 
 .centered-download #quartileTable {
   width: 100%;
+}
+
+.overlay-progress {
+  margin-bottom: 20px;
+  margin-left: 10px !important;
+}
+
+.overlay-text {
+  font-size: large;
+  text-align: center;
 }
 </style>
