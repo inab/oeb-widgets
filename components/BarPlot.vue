@@ -45,12 +45,13 @@
       </v-col>
     </v-row>
 
-    <!-- Overlay para el loader -->
+    <!-- Overlay for download -->
     <v-overlay :value="isDownloading">
-      <div class="overlay-content">
+      <div class="overlay-box">
         <v-progress-circular
           indeterminate
-          size="64"
+          color="dark"
+          size="50"
           class="overlay-progress"
         ></v-progress-circular>
         <div class="overlay-text">Downloading...</div>
@@ -1124,13 +1125,33 @@ export default {
   width: 100%;
 }
 
+.v-overlay__content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  padding: 80px 140px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
 .overlay-progress {
-  margin-bottom: 20px;
+  margin-bottom: 20px; /* Espacio opcional entre el progreso y el texto */
   margin-left: 10px !important;
+  color: #0B579F;
 }
 
 .overlay-text {
+  margin-top: 5px;
   font-size: large;
   text-align: center;
+  color: #52585d;
 }
 </style>
