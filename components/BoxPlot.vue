@@ -34,12 +34,12 @@
                         </template>
                         <v-list>
                             <v-list-item-group>
-                                <v-list-item  v-for="(orientation, index) in orientationMenu"
+                                <v-list-item  v-for="(item, index) in orientationMenu"
                                     class="menu-item"
                                     :key="index"
                                     @click="handleChangeOrientation(index)">
                                     <v-list-item-title>
-                                        {{ orientation }}
+                                        {{ item }}
                                     </v-list-item-title>
                                 </v-list-item>
                             </v-list-item-group>
@@ -48,7 +48,7 @@
                     <v-menu offset-y>
                         <template v-slot:activator="{ on, attrs }" >
                             <v-btn  outlined v-bind="attrs" v-on="on"
-                                class="buttons custom-height-button" :disabled="loading">
+                                class="button-classification custom-height-button" :disabled="loading">
                             {{ graphStyle }}
                             </v-btn>
                         </template>
@@ -210,7 +210,7 @@ export default {
         graphStyleMenu: {
             'm': 'Mean',
             'sd': 'Standard Deviation',
-            'empty': 'None'
+            'empty': 'Default Style',
         },
         graphStyle: 'Graph Style',
         sortMenu: {
@@ -343,10 +343,14 @@ export default {
       });
     },
 
-    handleChangeOrientation(orientation) {
+    handleChangeOrientation(selectedOrientation) {
+
+        // Updates the text of the button with the selected option.
+        this.orientation = this.orientationMenu[selectedOrientation];
+
         this.traces.map((item) => {
-            item.orientation = orientation
-            if(orientation == 'h'){
+            item.orientation = selectedOrientation
+            if(selectedOrientation == 'h'){
                 delete item.x
                 item.y = [ item.name ]
             } else {
@@ -378,7 +382,7 @@ export default {
             ]
         }
 
-        if(orientation == 'h') {
+        if(selectedOrientation == 'h') {
             delete this.layout.yaxis
             this.layout.xaxis = {
                 title: {
@@ -410,6 +414,8 @@ export default {
     },
 
     handleChangeGraphStyle(style) {
+        this.graphStyle = (style !== 'empty') ? this.graphStyleMenu[style] : 'Graph Style';
+
         this.traces.map((item) => {
             if(style == 'm') {
                 item.boxmean = true;
