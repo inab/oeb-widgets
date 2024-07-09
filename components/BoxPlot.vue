@@ -165,7 +165,7 @@
                     </tbody>
                 </v-simple-table>
             </div>
-            
+
         </v-row>
     </v-container>
 </template>
@@ -210,7 +210,7 @@ export default {
         graphStyleMenu: {
             'm': 'Mean',
             'sd': 'Standard Deviation',
-            'empty': 'None'
+            'empty': 'Default Style',
         },
         graphStyle: 'Graph Style',
         sortMenu: {
@@ -414,6 +414,9 @@ export default {
     },
 
     handleChangeGraphStyle(style) {
+        this.graphStyle = (style !== 'empty') ? this.graphStyleMenu[style] : 'Graph Style';
+
+
         this.traces.map((item) => {
             if(style == 'm') {
                 item.boxmean = true;
@@ -428,7 +431,11 @@ export default {
 
     handleChangeSort(sortKey) {
         if(sortKey != 'default') {
-            (sortKey == 'minimum') ? this.traces.sort((a, b) => a.median > b.median) : this.traces.sort((a, b) => a.median < b.median);
+          if(sortKey == 'minimum') {
+            this.traces.sort((a, b) => a.median > b.median ? 1 : -1)
+          } else {
+            this.traces.sort((a, b) => a.median > b.median ? -1 : 1)
+          }
         } else {
             this.traces = this.originalTraces;
         }
