@@ -1,3 +1,110 @@
+
+
+/* Buttons */
+
+.butns {
+    margin-bottom: 1.8rem;
+    /* font-family: 'Roboto', sans-serif; */
+  }
+
+.custom-btn-toggle .v-btn:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+  }
+  
+  .custom-btn-toggle .v-btn:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+
+  .custom-height-button {
+    color: black;
+    height: 45px !important;
+    min-height: 40px !important;
+    line-height: 45px !important;
+  }
+  
+  .theme--light.v-btn-toggle:not(.v-btn-toggle--group) .v-btn.v-btn {
+    border-color: #6C757D !important;
+    border-width: 2px !important;
+  }
+  .button-classification{
+    width: 200px;
+    font-size: 16px !important;
+    text-transform: capitalize;
+  }
+
+  .buttons {
+    width: 160px;
+    font-size: 16px !important;
+    text-transform: capitalize;
+  }
+
+  @media (max-width: 1200px) {
+    .button-classification {
+      width: 180px;
+      font-size: 14px !important;
+    }
+
+    .buttons {
+      width: 140px;
+      font-size: 14px !important;
+    }
+  
+    .custom-height-button {
+      height: 35px !important;
+      line-height: 35px !important;
+    }
+  }
+  
+  @media (max-width: 992px) {
+    .button-classification {
+      width: 150px;
+      font-size: 12px !important;
+    }
+    
+    .buttons {
+      width: 120px;
+      font-size: 12px !important;
+    }
+  
+    .custom-height-button {
+      height: 30px !important;
+      line-height: 30px !important;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .button-classification {
+      width: 120px;
+      font-size: 10px !important;
+    }
+  
+    .buttons {
+      width: 100px;
+      font-size: 10px !important;
+    }
+  
+    .custom-height-button {
+      height: 25px !important;
+      line-height: 25px !important;
+    }
+  }
+  
+  @media (max-width: 300px) {
+    .button-classification,
+    .buttons {
+      width: 100%;
+      font-size: 8px !important;
+    }
+  
+    .custom-height-button {
+      height: 20px !important;
+      line-height: 20px !important;
+    }
+  }
+
+
 .custom-table th{
     background-color: #6c757d;
     color: white;

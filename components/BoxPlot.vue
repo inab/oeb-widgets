@@ -8,7 +8,7 @@
                     <v-menu offset-y>
                         <template v-slot:activator="{ on, attrs }" >
                             <v-btn  outlined v-bind="attrs" v-on="on"
-                                class="button-download custom-height-button" :disabled="loading">
+                                class="button-classification custom-height-button" :disabled="loading">
                             {{ (sorted)?sortedName:'Sort & Classify Data' }}
                             </v-btn>
                         </template>
@@ -28,7 +28,7 @@
                     <v-menu offset-y>
                         <template v-slot:activator="{ on, attrs }" >
                             <v-btn  outlined v-bind="attrs" v-on="on"
-                                class="button-download custom-height-button" :disabled="loading">
+                                class="buttons custom-height-button" :disabled="loading">
                             {{ orientation }}
                             </v-btn>
                         </template>
@@ -48,7 +48,7 @@
                     <v-menu offset-y>
                         <template v-slot:activator="{ on, attrs }" >
                             <v-btn  outlined v-bind="attrs" v-on="on"
-                                class="button-download custom-height-button" :disabled="loading">
+                                class="buttons custom-height-button" :disabled="loading">
                             {{ graphStyle }}
                             </v-btn>
                         </template>
@@ -69,7 +69,7 @@
                     <v-menu offset-y>
                         <template v-slot:activator="{ on, attrs }" >
                             <v-btn  outlined v-bind="attrs" v-on="on"
-                            class="button-download custom-height-button" :disabled="loading">
+                            class="buttons custom-height-button" :disabled="loading">
                             Download
                             </v-btn>
                         </template>
@@ -108,7 +108,24 @@
             <div  id="chartCapture" :class="[sorted ? 'col-8' : 'col-12']">
                 <!-- CHART -->
                 <div ref="chart" id="boxPlot"></div>
+
+                <!-- ID AND DATE TABLE -->
+                <div >
+                    <div class="info-table">
+                        <v-simple-table class="custom-table" v-if="datasetModDate">
+                            <tbody>
+                                <tr>
+                                    <th class="first-th">Dataset ID</th>
+                                    <td>{{ datasetId }}</td>
+                                    <th>Last Update</th>
+                                    <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
+                                </tr>
+                            </tbody>
+                        </v-simple-table>
+                    </div>
+                </div>
             </div>
+
             <!-- Performance Table -->
             <div class="col-4" id="performanceCapture" v-if="sorted">
                 <v-simple-table class="tools-table" height="500px" fixed-header id='performanceTable'>
@@ -148,21 +165,7 @@
                     </tbody>
                 </v-simple-table>
             </div>
-            <!-- ID AND DATE TABLE -->
-             <div :class="isDownloading ? 'col-8' : 'col-12'">
-                <div class="info-table">
-                    <v-simple-table class="custom-table" v-if="datasetModDate">
-                        <tbody>
-                            <tr>
-                                <th class="first-th">Dataset ID</th>
-                                <td>{{ datasetId }}</td>
-                                <th>Last Update</th>
-                                <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
-                            </tr>
-                        </tbody>
-                    </v-simple-table>
-                </div>
-            </div>
+            
         </v-row>
     </v-container>
 </template>

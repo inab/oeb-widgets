@@ -12,17 +12,17 @@
             </v-btn>
             <v-btn class="button-classification custom-height-button" v-else :disabled="loading"
               @click="toggleSortOrder">Return To Raw Results</v-btn>
-            <v-btn @click="optimalView" class="button-resetView custom-height-button" v-if="optimal === 'no'"
+            <v-btn @click="optimalView" class="buttons custom-height-button" v-if="optimal === 'no'"
               :disabled="loading">
               Optimal View
             </v-btn>
-            <v-btn class="button-resetView custom-height-button" v-else :disabled="loading" @click="optimalView">
+            <v-btn class="buttons custom-height-button" v-else :disabled="loading" @click="optimalView">
               Original View</v-btn>
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }" >
                 <v-btn  outlined v-bind="attrs" v-on="on"
-                  class="button-download custom-height-button" :disabled="loading">
+                  class="buttons custom-height-button" :disabled="loading">
                   Download
                 </v-btn>
               </template>
@@ -58,10 +58,27 @@
     </v-overlay>
 
     <v-row class="mt-4" id="todownload" :class="{ 'centered-download': isDownloading }">
-      <!-- Chart -->
       <div :class="[sorted ? 'col-8' : 'col-12']"  class="justify-center" id="chartCapture">
+        
+        <!-- Chart -->
         <div ref="chart" id="barPlot"></div>
         <br>
+
+        <!-- ID AND DATE TABLE -->
+        <div>
+          <div class="info-table">
+            <v-simple-table class="custom-table" v-if="datasetModDate">
+            <tbody>
+              <tr>
+                <th class="first-th">Dataset ID</th>
+                <td>{{ datasetId }}</td>
+                <th>Last Update</th>
+                <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
+              </tr>
+            </tbody>
+            </v-simple-table>
+          </div>
+        </div>
         
       </div>
 
@@ -99,23 +116,7 @@
           </v-simple-table>
         </transition>
       </div>
-
-
-      <!-- ID AND DATE TABLE -->
-      <div :class="isDownloading ? 'col-8' : 'col-12'">
-        <div class="info-table">
-          <v-simple-table class="custom-table" v-if="datasetModDate">
-          <tbody>
-            <tr>
-              <th class="first-th">Dataset ID</th>
-              <td>{{ datasetId }}</td>
-              <th>Last Update</th>
-              <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
-            </tr>
-          </tbody>
-          </v-simple-table>
-        </div>
-      </div>
+      
     </v-row>
   </v-container>
 </template>
@@ -906,14 +907,8 @@ export default {
   text-transform: capitalize;
 }
 
-.button-resetView {
-  width: 140px;
-  font-size: 16px !important;
-  text-transform: capitalize;
-}
-
-.button-download {
-  width: 168px;
+.buttons {
+  width: 160px;
   font-size: 16px !important;
   text-transform: capitalize;
 }
@@ -924,12 +919,7 @@ export default {
     font-size: 14px !important;
   }
 
-  .button-resetView {
-    width: 120px;
-    font-size: 14px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 140px;
     font-size: 14px !important;
   }
@@ -946,12 +936,7 @@ export default {
     font-size: 12px !important;
   }
 
-  .button-resetView {
-    width: 100px;
-    font-size: 12px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 120px;
     font-size: 12px !important;
   }
@@ -968,12 +953,7 @@ export default {
     font-size: 10px !important;
   }
 
-  .button-resetView {
-    width: 80px;
-    font-size: 10px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 100px;
     font-size: 10px !important;
   }
@@ -987,8 +967,7 @@ export default {
 @media (max-width: 300px) {
 
   .button-classification,
-  .button-resetView,
-  .button-download {
+  .buttons {
     width: 100%;
     font-size: 8px !important;
   }
@@ -997,11 +976,6 @@ export default {
     height: 20px !important;
     line-height: 20px !important;
   }
-}
-
-.menu-item:hover {
-  background-color: #f0f0f0;
-  cursor: pointer;
 }
 
 .custom-btn-toggle .v-btn:first-child {

@@ -41,19 +41,19 @@
             </v-menu>
 
             <!-- Original View / Optimal view -->
-            <v-btn @click="toggleView" outlined class="button-originalView custom-height-button">
+            <v-btn @click="toggleView" outlined class="buttons custom-height-button">
               {{ viewButtonText }}
             </v-btn>
 
             <!-- Reset View -->
-            <v-btn @click="noClassification" outlined class="button-originalView custom-height-button">
+            <v-btn @click="noClassification" outlined class="buttons custom-height-button">
               Reset Chart
             </v-btn>
 
             <!-- Dropdown for Download -->
             <v-menu offset-y>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn outlined v-bind="attrs" v-on="on" class="button-download custom-height-button">
+                <v-btn outlined v-bind="attrs" v-on="on" class="buttons custom-height-button">
                   Download
                 </v-btn>
               </template>
@@ -93,9 +93,6 @@
     </v-overlay>
 
     <v-row id="todownload" :class="{ 'centered-download': isDownloading }">
-      <!-- Overlay para loader -->
-      
-
       <div :class="[sorted ? 'col-8' : 'col-12']" class="justify-center" id="chartCapture">
         
         <!-- CHART -->
@@ -108,6 +105,22 @@
           message="At least four participants are required for the benchmark!"
           type="warning"
         />
+
+        <!-- ID AND DATE TABLE -->
+        <div>
+          <div class="info-table" v-if="datasetModDate">
+            <v-simple-table class="custom-table">
+            <tbody>
+                  <tr>
+                    <th class="first-th">Dataset ID</th>
+                    <td>{{ datasetId }}</td>
+                    <th>Last Update</th>
+                    <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
+                  </tr>
+                </tbody>
+          </v-simple-table>
+          </div>
+        </div>
         
       </div>
 
@@ -159,22 +172,6 @@
         </transition>
       </div>
 
-      <!-- ID AND DATE TABLE -->
-      <div :class="isDownloading ? 'col-8' : 'col-12'">
-        <div class="info-table" v-if="datasetModDate">
-          <v-simple-table class="custom-table">
-          <tbody>
-                <tr>
-                  <th class="first-th">Dataset ID</th>
-                  <td>{{ datasetId }}</td>
-                  <th>Last Update</th>
-                  <td class="last-td">{{ formatDateString(datasetModDate) }}</td>
-                </tr>
-              </tbody>
-        </v-simple-table>
-        </div>
-      </div>
-      
 
     </v-row>
   </v-container>
@@ -2023,36 +2020,23 @@ export default {
 
 .button-classification{
   width: 210px;
-  font-size: 17px !important;
-  text-transform: capitalize;
-}
-.button-originalView {
-  width: 140px;
   font-size: 16px !important;
   text-transform: capitalize;
 }
 
-.button-download {
-  width: 168px;
+.buttons {
+  width: 160px;
   font-size: 16px !important;
   text-transform: capitalize;
 }
-.menu-item:hover {
-  background-color: #6c757d;
-  cursor: pointer;
-}
+
 @media (max-width: 1200px) {
   .button-classification {
     width: 180px;
     font-size: 14px !important;
   }
 
-  .button-originalView {
-    width: 120px;
-    font-size: 14px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 140px;
     font-size: 14px !important;
   }
@@ -2069,12 +2053,7 @@ export default {
     font-size: 12px !important;
   }
 
-  .button-originalView {
-    width: 100px;
-    font-size: 12px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 120px;
     font-size: 12px !important;
   }
@@ -2091,12 +2070,7 @@ export default {
     font-size: 10px !important;
   }
 
-  .button-originalView {
-    width: 80px;
-    font-size: 10px !important;
-  }
-
-  .button-download {
+  .buttons {
     width: 100px;
     font-size: 10px !important;
   }
@@ -2109,8 +2083,7 @@ export default {
 
 @media (max-width: 300px) {
   .button-classification,
-  .button-originalView,
-  .button-download {
+  .buttons {
     width: 100%;
     font-size: 8px !important;
   }
@@ -2121,7 +2094,7 @@ export default {
   }
 }
 
-/* Info table */
+/* Buttons */
 
 .custom-btn-toggle .v-btn:first-child {
   border-top-left-radius: 10px;
