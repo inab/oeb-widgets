@@ -34,12 +34,12 @@
                         </template>
                         <v-list>
                             <v-list-item-group>
-                                <v-list-item  v-for="(orientation, index) in orientationMenu"
+                                <v-list-item  v-for="(item, index) in orientationMenu"
                                     class="menu-item"
                                     :key="index"
                                     @click="handleChangeOrientation(index)">
                                     <v-list-item-title>
-                                        {{ orientation }}
+                                        {{ item }}
                                     </v-list-item-title>
                                 </v-list-item>
                             </v-list-item-group>
@@ -343,10 +343,14 @@ export default {
       });
     },
 
-    handleChangeOrientation(orientation) {
+    handleChangeOrientation(selectedOrientation) {
+
+        // Updates the text of the button with the selected option.
+        this.orientation = this.orientationMenu[selectedOrientation];
+
         this.traces.map((item) => {
-            item.orientation = orientation
-            if(orientation == 'h'){
+            item.orientation = selectedOrientation
+            if(selectedOrientation == 'h'){
                 delete item.x
                 item.y = [ item.name ]
             } else {
@@ -378,7 +382,7 @@ export default {
             ]
         }
 
-        if(orientation == 'h') {
+        if(selectedOrientation == 'h') {
             delete this.layout.yaxis
             this.layout.xaxis = {
                 title: {
