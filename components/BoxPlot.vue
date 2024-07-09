@@ -92,17 +92,19 @@
             </v-col>
         </v-row>
 
-        <!-- Overlay para el loader -->
+        <!-- Overlay for download -->
         <v-overlay :value="isDownloading">
-        <div class="overlay-content">
+        <div class="overlay-box">
             <v-progress-circular
             indeterminate
-            size="64"
+            color="dark"
+            size="50"
             class="overlay-progress"
             ></v-progress-circular>
             <div class="overlay-text">Downloading...</div>
         </div>
         </v-overlay>
+
         <v-row class="mt-4" id="todownload" :class="{ 'centered-download': isDownloading }">
             <!-- Chart -->
             <div  id="chartCapture" :class="[sorted ? 'col-8' : 'col-12']">
@@ -165,7 +167,7 @@
                     </tbody>
                 </v-simple-table>
             </div>
-            
+
         </v-row>
     </v-container>
 </template>
@@ -430,7 +432,11 @@ export default {
 
     handleChangeSort(sortKey) {
         if(sortKey != 'default') {
-            (sortKey == 'minimum') ? this.traces.sort((a, b) => a.median > b.median) : this.traces.sort((a, b) => a.median < b.median);
+          if(sortKey == 'minimum') {
+            this.traces.sort((a, b) => a.median > b.median ? 1 : -1)
+          } else {
+            this.traces.sort((a, b) => a.median > b.median ? -1 : 1)
+          }
         } else {
             this.traces = this.originalTraces;
         }
